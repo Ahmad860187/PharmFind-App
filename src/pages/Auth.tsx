@@ -6,6 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Pill, Heart, ShieldCheck } from "lucide-react";
+import { Link } from "react-router-dom";
+import Logo from "@/components/Logo";
 
 const Auth = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -25,26 +27,25 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-accent/20 to-background p-4">
-      <div className="w-full max-w-6xl grid lg:grid-cols-2 gap-8 items-center">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-accent/30 to-background p-4 relative overflow-hidden">
+      {/* Decorative elements */}
+      <div className="absolute top-20 left-10 w-72 h-72 bg-primary/5 rounded-full blur-3xl animate-pulse" />
+      <div className="absolute bottom-20 right-10 w-96 h-96 bg-secondary/5 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+      
+      <div className="w-full max-w-6xl grid lg:grid-cols-2 gap-8 items-center relative z-10">
         {/* Left side - Branding */}
         <div className="hidden lg:flex flex-col justify-center space-y-8 px-8">
           <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="p-3 bg-primary rounded-2xl">
-                <Pill className="w-8 h-8 text-primary-foreground" />
-              </div>
-              <h1 className="text-4xl font-bold text-foreground">PharmFind</h1>
-            </div>
+            <Logo />
             <p className="text-xl text-muted-foreground">
               Your trusted medicine finder & delivery service in Lebanon
             </p>
           </div>
 
           <div className="space-y-6">
-            <div className="flex items-start gap-4">
-              <div className="p-2 bg-secondary/20 rounded-lg mt-1">
-                <ShieldCheck className="w-6 h-6 text-secondary" />
+            <div className="flex items-start gap-4 p-4 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 hover:border-primary/40 transition-colors">
+              <div className="p-2 bg-primary/20 rounded-lg mt-1 shadow-sm">
+                <ShieldCheck className="w-6 h-6 text-primary" />
               </div>
               <div>
                 <h3 className="font-semibold text-foreground mb-1">Real-time Availability</h3>
@@ -54,8 +55,8 @@ const Auth = () => {
               </div>
             </div>
 
-            <div className="flex items-start gap-4">
-              <div className="p-2 bg-secondary/20 rounded-lg mt-1">
+            <div className="flex items-start gap-4 p-4 rounded-xl bg-gradient-to-br from-secondary/10 to-secondary/5 border border-secondary/20 hover:border-secondary/40 transition-colors">
+              <div className="p-2 bg-secondary/20 rounded-lg mt-1 shadow-sm">
                 <Heart className="w-6 h-6 text-secondary" />
               </div>
               <div>
@@ -66,9 +67,9 @@ const Auth = () => {
               </div>
             </div>
 
-            <div className="flex items-start gap-4">
-              <div className="p-2 bg-secondary/20 rounded-lg mt-1">
-                <Pill className="w-6 h-6 text-secondary" />
+            <div className="flex items-start gap-4 p-4 rounded-xl bg-gradient-to-br from-accent/20 to-accent/10 border border-accent/30 hover:border-accent/50 transition-colors">
+              <div className="p-2 bg-accent/30 rounded-lg mt-1 shadow-sm">
+                <Pill className="w-6 h-6 text-accent-foreground" />
               </div>
               <div>
                 <h3 className="font-semibold text-foreground mb-1">Save Time & Effort</h3>
@@ -90,9 +91,9 @@ const Auth = () => {
 
             {/* Login Form */}
             <TabsContent value="login">
-              <Card>
+              <Card className="border-2 shadow-xl">
                 <CardHeader>
-                  <CardTitle>Welcome back</CardTitle>
+                  <CardTitle className="text-2xl">Welcome back!</CardTitle>
                   <CardDescription>
                     Enter your credentials to access your account
                   </CardDescription>
@@ -117,9 +118,16 @@ const Auth = () => {
                         required
                       />
                     </div>
+                    <div className="flex items-center justify-between">
+                      <Link to="/forgot-password">
+                        <Button variant="link" className="px-0 text-sm">
+                          Forgot password?
+                        </Button>
+                      </Link>
+                    </div>
                     <Button
                       type="submit"
-                      className="w-full"
+                      className="w-full shadow-lg hover:shadow-xl transition-shadow"
                       disabled={isLoading}
                     >
                       {isLoading ? "Logging in..." : "Login"}
@@ -131,23 +139,34 @@ const Auth = () => {
 
             {/* Sign Up Form */}
             <TabsContent value="signup">
-              <Card>
+              <Card className="border-2 shadow-xl">
                 <CardHeader>
-                  <CardTitle>Create an account</CardTitle>
+                  <CardTitle className="text-2xl">Create an account</CardTitle>
                   <CardDescription>
-                    Join PharmFind to find your medicines easily
+                    Join the PharmFind community!
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <form onSubmit={handleSignUp} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-username">Username</Label>
-                      <Input
-                        id="signup-username"
-                        type="text"
-                        placeholder="johndoe"
-                        required
-                      />
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="signup-firstname">First Name</Label>
+                        <Input
+                          id="signup-firstname"
+                          type="text"
+                          placeholder="John"
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="signup-lastname">Last Name</Label>
+                        <Input
+                          id="signup-lastname"
+                          type="text"
+                          placeholder="Doe"
+                          required
+                        />
+                      </div>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="signup-email">Email</Label>
@@ -178,7 +197,7 @@ const Auth = () => {
                     </div>
                     <Button
                       type="submit"
-                      className="w-full"
+                      className="w-full shadow-lg hover:shadow-xl transition-shadow"
                       disabled={isLoading}
                     >
                       {isLoading ? "Creating account..." : "Sign Up"}
@@ -190,11 +209,8 @@ const Auth = () => {
           </Tabs>
 
           {/* Mobile branding */}
-          <div className="lg:hidden mt-8 text-center">
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <Pill className="w-5 h-5 text-primary" />
-              <p className="text-sm text-muted-foreground">PharmFind - Medicine Finder & Delivery</p>
-            </div>
+          <div className="lg:hidden mt-8 flex justify-center">
+            <Logo size="small" />
           </div>
         </div>
       </div>
