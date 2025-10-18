@@ -14,7 +14,7 @@ const Logo = ({ showText = true, size = "default" }: { showText?: boolean; size?
 
   return (
     <div className="flex items-center gap-3">
-      <div className={`${sizeClasses[size]} rounded-xl overflow-hidden bg-primary/10 p-1.5 ring-2 ring-primary/20`}>
+      <div className={`${sizeClasses[size]}`}>
         <img src={logoImage} alt="PharmFind Logo" className="w-full h-full object-contain" />
       </div>
       {showText && (
