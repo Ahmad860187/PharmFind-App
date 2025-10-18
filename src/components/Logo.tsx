@@ -3,8 +3,8 @@ import logoImage from "@/assets/pharmfind-logo.png";
 
 const Logo = ({ size = "default" }: { size?: "default" | "small" }) => {
   const sizeClasses = {
-    default: "w-48 h-12",
-    small: "w-36 h-9"
+    default: "w-64 h-16",
+    small: "w-48 h-12"
   };
 
   return (
