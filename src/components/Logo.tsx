@@ -13,7 +13,7 @@ const Logo = ({ showText = true, size = "default" }: { showText?: boolean; size?
   };
 
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex items-center gap-1.5">
       <div className={`${sizeClasses[size]}`}>
         <img src={logoImage} alt="PharmFind Logo" className="w-full h-full object-contain" />
       </div>
