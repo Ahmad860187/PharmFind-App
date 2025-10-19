@@ -1,10 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { ArrowLeft, Settings, Save, RotateCcw } from "lucide-react";
+import { ArrowLeft, Settings } from "lucide-react";
 import { Link } from "react-router-dom";
-import { toast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormDescription } from "@/components/ui/form";
@@ -15,8 +14,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Logo from "@/components/Logo";
 
-const STORAGE_KEY = "pharmfind_user_settings";
-
 const settingsSchema = z.object({
   // Notifications
   orderStatusUpdates: z.boolean().default(true),
@@ -26,7 +23,6 @@ const settingsSchema = z.object({
   // Accessibility
   largeTextMode: z.boolean().default(false),
   highContrastMode: z.boolean().default(false),
-  preferredLanguage: z.string().default("English"),
   
   // Privacy & Security
   sharePrescriptionHistory: z.boolean().default(false),
@@ -47,7 +43,6 @@ const defaultValues: SettingsFormValues = {
   notificationMethod: "All",
   largeTextMode: false,
   highContrastMode: false,
-  preferredLanguage: "English",
   sharePrescriptionHistory: false,
   enableTwoFactorAuth: false,
   keepLoggedIn: false,
@@ -57,66 +52,30 @@ const defaultValues: SettingsFormValues = {
 };
 
 const UserSettings = () => {
-  const [isLoading, setIsLoading] = useState(false);
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-
   const form = useForm<SettingsFormValues>({
     resolver: zodResolver(settingsSchema),
     defaultValues,
   });
 
-  // Load settings from localStorage on mount
+  // Watch accessibility settings and apply visual changes
+  const largeTextMode = form.watch("largeTextMode");
+  const highContrastMode = form.watch("highContrastMode");
+
   useEffect(() => {
-    const savedSettings = localStorage.getItem(STORAGE_KEY);
-    if (savedSettings) {
-      try {
-        const parsed = JSON.parse(savedSettings);
-        form.reset(parsed);
-      } catch (error) {
-        console.error("Failed to load settings:", error);
-      }
+    if (largeTextMode) {
+      document.documentElement.classList.add("large-text-mode");
+    } else {
+      document.documentElement.classList.remove("large-text-mode");
     }
-  }, [form]);
+  }, [largeTextMode]);
 
-  // Track unsaved changes
   useEffect(() => {
-    const subscription = form.watch(() => {
-      setHasUnsavedChanges(true);
-    });
-    return () => subscription.unsubscribe();
-  }, [form]);
-
-  const onSubmit = async (data: SettingsFormValues) => {
-    setIsLoading(true);
-    try {
-      // Simulate save delay
-      await new Promise(resolve => setTimeout(resolve, 500));
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-      setHasUnsavedChanges(false);
-      toast({
-        title: "Settings saved successfully",
-        description: "Your preferences have been updated.",
-      });
-    } catch (error) {
-      toast({
-        title: "Failed to save settings",
-        description: "Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
+    if (highContrastMode) {
+      document.documentElement.classList.add("high-contrast-mode");
+    } else {
+      document.documentElement.classList.remove("high-contrast-mode");
     }
-  };
-
-  const handleReset = () => {
-    form.reset(defaultValues);
-    localStorage.removeItem(STORAGE_KEY);
-    setHasUnsavedChanges(false);
-    toast({
-      title: "Settings reset",
-      description: "All preferences have been restored to defaults.",
-    });
-  };
+  }, [highContrastMode]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -146,7 +105,7 @@ const UserSettings = () => {
         </div>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <div className="space-y-6">
             <Tabs defaultValue="notifications" className="w-full">
               <TabsList className="grid w-full grid-cols-4">
                 <TabsTrigger value="notifications">Notifications</TabsTrigger>
@@ -271,30 +230,6 @@ const UserSettings = () => {
                       )}
                     />
 
-                    <FormField
-                      control={form.control}
-                      name="preferredLanguage"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Preferred language</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select a language" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="English">English</SelectItem>
-                              <SelectItem value="Spanish">Spanish</SelectItem>
-                              <SelectItem value="French">French</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormDescription>
-                            Choose your preferred language for the interface
-                          </FormDescription>
-                        </FormItem>
-                      )}
-                    />
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -439,36 +374,7 @@ const UserSettings = () => {
                 </Card>
               </TabsContent>
             </Tabs>
-
-            {/* Action Buttons */}
-            <Card>
-              <CardContent className="pt-6">
-                <div className="flex flex-col sm:flex-row gap-4 justify-between items-center">
-                  <div className="text-sm text-muted-foreground">
-                    {hasUnsavedChanges && (
-                      <span className="text-amber-500">• You have unsaved changes</span>
-                    )}
-                  </div>
-                  <div className="flex gap-3 w-full sm:w-auto">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={handleReset}
-                      disabled={isLoading}
-                      className="flex-1 sm:flex-none"
-                    >
-                      <RotateCcw className="mr-2 h-4 w-4" />
-                      Reset to Defaults
-                    </Button>
-                    <Button type="submit" disabled={isLoading} className="flex-1 sm:flex-none">
-                      <Save className="mr-2 h-4 w-4" />
-                      {isLoading ? "Saving..." : "Save Changes"}
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </form>
+          </div>
         </Form>
       </main>
     </div>
