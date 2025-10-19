@@ -11,6 +11,7 @@ import Logo from "@/components/Logo";
 
 const Auth = () => {
   const [isLoading, setIsLoading] = useState(false);
+  const [loginMethod, setLoginMethod] = useState<'email' | 'phone'>('email');
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -101,14 +102,49 @@ const Auth = () => {
                 <CardContent>
                   <form onSubmit={handleLogin} className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="login-email">Email</Label>
-                      <Input
-                        id="login-email"
-                        type="email"
-                        placeholder="you@example.com"
-                        required
-                      />
+                      <Label>Login with</Label>
+                      <div className="flex gap-2">
+                        <Button
+                          type="button"
+                          variant={loginMethod === 'email' ? 'default' : 'outline'}
+                          size="sm"
+                          className="flex-1"
+                          onClick={() => setLoginMethod('email')}
+                        >
+                          Email
+                        </Button>
+                        <Button
+                          type="button"
+                          variant={loginMethod === 'phone' ? 'default' : 'outline'}
+                          size="sm"
+                          className="flex-1"
+                          onClick={() => setLoginMethod('phone')}
+                        >
+                          Phone
+                        </Button>
+                      </div>
                     </div>
+                    {loginMethod === 'email' ? (
+                      <div className="space-y-2">
+                        <Label htmlFor="login-email">Email</Label>
+                        <Input
+                          id="login-email"
+                          type="email"
+                          placeholder="you@example.com"
+                          required
+                        />
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <Label htmlFor="login-phone">Phone Number</Label>
+                        <Input
+                          id="login-phone"
+                          type="tel"
+                          placeholder="+961 70 123 456"
+                          required
+                        />
+                      </div>
+                    )}
                     <div className="space-y-2">
                       <Label htmlFor="login-password">Password</Label>
                       <Input
@@ -174,6 +210,15 @@ const Auth = () => {
                         id="signup-email"
                         type="email"
                         placeholder="you@example.com"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="signup-phone">Phone Number</Label>
+                      <Input
+                        id="signup-phone"
+                        type="tel"
+                        placeholder="+961 70 123 456"
                         required
                       />
                     </div>
