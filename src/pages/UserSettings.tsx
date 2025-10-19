@@ -25,35 +25,7 @@ type Address = {
   additionalDetails: string;
 };
 
-const INITIAL_ADDRESSES: Address[] = [
-  {
-    id: "1",
-    nickname: "Home",
-    fullName: "John Doe",
-    building: "Tala building, George Zouwein",
-    floor: "8th floor",
-    phoneNumber: "+961 70256649",
-    additionalDetails: "",
-  },
-  {
-    id: "2",
-    nickname: "Home",
-    fullName: "John Doe",
-    building: "sky suites, makhoul street",
-    floor: "502",
-    phoneNumber: "+961 70256649",
-    additionalDetails: "",
-  },
-  {
-    id: "3",
-    nickname: "Home",
-    fullName: "John Doe",
-    building: "AUB main gate, Bliss street",
-    floor: "none",
-    phoneNumber: "+961 70256649",
-    additionalDetails: "",
-  },
-];
+const INITIAL_ADDRESSES: Address[] = [];
 
 const settingsSchema = z.object({
   // Account Info
