@@ -2,19 +2,28 @@ import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { ArrowLeft, Settings } from "lucide-react";
+import { ArrowLeft, Settings, LogOut } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormDescription } from "@/components/ui/form";
 import { Switch } from "@/components/ui/switch";
-
+import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Logo from "@/components/Logo";
 
 const settingsSchema = z.object({
+  // Account Info
+  fullName: z.string().default(""),
+  email: z.string().email().default(""),
+  phoneNumber: z.string().default(""),
+  currentPassword: z.string().default(""),
+  newPassword: z.string().default(""),
+  confirmPassword: z.string().default(""),
+  twoFactorAuth: z.boolean().default(false),
+  
   // Notifications
   orderStatusUpdates: z.boolean().default(true),
   promotionalOffers: z.boolean().default(true),
@@ -33,6 +42,13 @@ const settingsSchema = z.object({
 type SettingsFormValues = z.infer<typeof settingsSchema>;
 
 const defaultValues: SettingsFormValues = {
+  fullName: "",
+  email: "",
+  phoneNumber: "",
+  currentPassword: "",
+  newPassword: "",
+  confirmPassword: "",
+  twoFactorAuth: false,
   orderStatusUpdates: true,
   promotionalOffers: true,
   notificationMethod: "All",
@@ -77,12 +93,18 @@ const UserSettings = () => {
           <Link to="/dashboard">
             <Logo size="small" />
           </Link>
-          <Link to="/dashboard">
-            <Button variant="ghost" size="sm">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Dashboard
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm">
+              <LogOut className="mr-2 h-4 w-4" />
+              Logout
             </Button>
-          </Link>
+            <Link to="/dashboard">
+              <Button variant="ghost" size="sm">
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back to Dashboard
+              </Button>
+            </Link>
+          </div>
         </div>
       </header>
 
@@ -91,19 +113,210 @@ const UserSettings = () => {
         <div className="flex items-center gap-3 mb-6">
           <Settings className="h-8 w-8 text-primary" />
           <div>
-            <h1 className="text-3xl font-bold">User Settings</h1>
-            <p className="text-muted-foreground">Manage your preferences and account settings</p>
+            <h1 className="text-3xl font-bold">Settings</h1>
+            <p className="text-muted-foreground">Manage your account and preferences</p>
           </div>
         </div>
 
         <Form {...form}>
           <div className="space-y-6">
-            <Tabs defaultValue="notifications" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
+            <Tabs defaultValue="account" className="w-full">
+              <TabsList className="grid w-full grid-cols-4">
+                <TabsTrigger value="account">Account Info</TabsTrigger>
+                <TabsTrigger value="delivery">Delivery</TabsTrigger>
                 <TabsTrigger value="notifications">Notifications</TabsTrigger>
                 <TabsTrigger value="accessibility">Accessibility</TabsTrigger>
-                <TabsTrigger value="delivery">Delivery</TabsTrigger>
               </TabsList>
+
+              {/* Account Info Tab */}
+              <TabsContent value="account">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Account Information</CardTitle>
+                    <CardDescription>Manage your personal details and security settings</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <FormField
+                      control={form.control}
+                      name="fullName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Full name</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email address</FormLabel>
+                          <FormControl>
+                            <Input type="email" {...field} />
+                          </FormControl>
+                          <FormDescription>
+                            This email is used for login and notifications
+                          </FormDescription>
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="phoneNumber"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Phone number</FormLabel>
+                          <FormControl>
+                            <Input type="tel" {...field} />
+                          </FormControl>
+                          <FormDescription>
+                            For order updates and delivery notifications
+                          </FormDescription>
+                        </FormItem>
+                      )}
+                    />
+
+                    <div className="space-y-4">
+                      <FormLabel>Change Password</FormLabel>
+                      <FormField
+                        control={form.control}
+                        name="currentPassword"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormControl>
+                              <Input type="password" placeholder="Enter current password" {...field} />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="newPassword"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormControl>
+                              <Input type="password" placeholder="Enter new password" {...field} />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="confirmPassword"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormControl>
+                              <Input type="password" placeholder="Confirm new password" {...field} />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    <FormField
+                      control={form.control}
+                      name="twoFactorAuth"
+                      render={({ field }) => (
+                        <FormItem className="flex items-center justify-between rounded-lg border p-4">
+                          <div className="space-y-0.5">
+                            <FormLabel className="text-base">Enable Two-Factor Authentication (2FA)</FormLabel>
+                            <FormDescription>
+                              Add an extra layer of security to your account
+                            </FormDescription>
+                          </div>
+                          <FormControl>
+                            <Switch checked={field.value} onCheckedChange={field.onChange} />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+
+                    <div className="pt-4">
+                      <Button variant="destructive">Delete Account</Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              {/* Delivery Preferences Tab */}
+              <TabsContent value="delivery">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Delivery Preferences</CardTitle>
+                    <CardDescription>Set your delivery options and instructions</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <FormField
+                      control={form.control}
+                      name="defaultHomeDelivery"
+                      render={({ field }) => (
+                        <FormItem className="flex items-center justify-between rounded-lg border p-4">
+                          <div className="space-y-0.5">
+                            <FormLabel className="text-base">Default to home delivery</FormLabel>
+                            <FormDescription>
+                              Automatically select home delivery for all orders
+                            </FormDescription>
+                          </div>
+                          <FormControl>
+                            <Switch checked={field.value} onCheckedChange={field.onChange} />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="deliveryInstructions"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Delivery instructions</FormLabel>
+                          <FormControl>
+                            <Textarea
+                              placeholder="E.g., Leave at front door, ring doorbell twice..."
+                              className="resize-none"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            Special instructions for delivery personnel
+                          </FormDescription>
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="preferredDeliveryTime"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Preferred delivery time</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select preferred time" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="Morning">Morning (8AM - 12PM)</SelectItem>
+                              <SelectItem value="Afternoon">Afternoon (12PM - 5PM)</SelectItem>
+                              <SelectItem value="Evening">Evening (5PM - 9PM)</SelectItem>
+                              <SelectItem value="No preference">No preference</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormDescription>
+                            We'll try to deliver during your preferred time window
+                          </FormDescription>
+                        </FormItem>
+                      )}
+                    />
+                  </CardContent>
+                </Card>
+              </TabsContent>
 
               {/* Notifications Tab */}
               <TabsContent value="notifications">
@@ -225,80 +438,6 @@ const UserSettings = () => {
                 </Card>
               </TabsContent>
 
-              {/* Delivery Preferences Tab */}
-              <TabsContent value="delivery">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Delivery Preferences</CardTitle>
-                    <CardDescription>Set your delivery options and instructions</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    <FormField
-                      control={form.control}
-                      name="defaultHomeDelivery"
-                      render={({ field }) => (
-                        <FormItem className="flex items-center justify-between rounded-lg border p-4">
-                          <div className="space-y-0.5">
-                            <FormLabel className="text-base">Default to home delivery</FormLabel>
-                            <FormDescription>
-                              Automatically select home delivery for all orders
-                            </FormDescription>
-                          </div>
-                          <FormControl>
-                            <Switch checked={field.value} onCheckedChange={field.onChange} />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="deliveryInstructions"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Delivery instructions</FormLabel>
-                          <FormControl>
-                            <Textarea
-                              placeholder="E.g., Leave at front door, ring doorbell twice..."
-                              className="resize-none"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormDescription>
-                            Special instructions for delivery personnel
-                          </FormDescription>
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="preferredDeliveryTime"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Preferred delivery time</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select preferred time" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="Morning">Morning (8AM - 12PM)</SelectItem>
-                              <SelectItem value="Afternoon">Afternoon (12PM - 5PM)</SelectItem>
-                              <SelectItem value="Evening">Evening (5PM - 9PM)</SelectItem>
-                              <SelectItem value="No preference">No preference</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormDescription>
-                            We'll try to deliver during your preferred time window
-                          </FormDescription>
-                        </FormItem>
-                      )}
-                    />
-                  </CardContent>
-                </Card>
-              </TabsContent>
             </Tabs>
           </div>
         </Form>
