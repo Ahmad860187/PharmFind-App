@@ -18,11 +18,6 @@ import Logo from "@/components/Logo";
 const STORAGE_KEY = "pharmfind_user_settings";
 
 const settingsSchema = z.object({
-  // Medication Preferences
-  allowGenericSubstitutions: z.boolean().default(true),
-  notifyPriceChanges: z.boolean().default(true),
-  preferredPharmacyChain: z.string().default("Any"),
-  
   // Notifications
   orderStatusUpdates: z.boolean().default(true),
   promotionalOffers: z.boolean().default(false),
@@ -48,9 +43,6 @@ const settingsSchema = z.object({
 type SettingsFormValues = z.infer<typeof settingsSchema>;
 
 const defaultValues: SettingsFormValues = {
-  allowGenericSubstitutions: true,
-  notifyPriceChanges: true,
-  preferredPharmacyChain: "Any",
   orderStatusUpdates: true,
   promotionalOffers: false,
   medicationReminders: true,
@@ -157,87 +149,13 @@ const UserSettings = () => {
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <Tabs defaultValue="medication" className="w-full">
-              <TabsList className="grid w-full grid-cols-5">
-                <TabsTrigger value="medication">Medication</TabsTrigger>
+            <Tabs defaultValue="notifications" className="w-full">
+              <TabsList className="grid w-full grid-cols-4">
                 <TabsTrigger value="notifications">Notifications</TabsTrigger>
                 <TabsTrigger value="accessibility">Accessibility</TabsTrigger>
                 <TabsTrigger value="privacy">Privacy</TabsTrigger>
                 <TabsTrigger value="delivery">Delivery</TabsTrigger>
               </TabsList>
-
-              {/* Medication Preferences Tab */}
-              <TabsContent value="medication">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Medication Preferences</CardTitle>
-                    <CardDescription>Configure your medication and pharmacy preferences</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    <FormField
-                      control={form.control}
-                      name="allowGenericSubstitutions"
-                      render={({ field }) => (
-                        <FormItem className="flex items-center justify-between rounded-lg border p-4">
-                          <div className="space-y-0.5">
-                            <FormLabel className="text-base">Allow generic medication substitutions</FormLabel>
-                            <FormDescription>
-                              Pharmacies can substitute with generic alternatives to save costs
-                            </FormDescription>
-                          </div>
-                          <FormControl>
-                            <Switch checked={field.value} onCheckedChange={field.onChange} />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="notifyPriceChanges"
-                      render={({ field }) => (
-                        <FormItem className="flex items-center justify-between rounded-lg border p-4">
-                          <div className="space-y-0.5">
-                            <FormLabel className="text-base">Notify me of price changes</FormLabel>
-                            <FormDescription>
-                              Get alerts when medication prices change significantly
-                            </FormDescription>
-                          </div>
-                          <FormControl>
-                            <Switch checked={field.value} onCheckedChange={field.onChange} />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="preferredPharmacyChain"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Preferred pharmacy chain</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select a pharmacy chain" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="CVS">CVS</SelectItem>
-                              <SelectItem value="Walgreens">Walgreens</SelectItem>
-                              <SelectItem value="Rite Aid">Rite Aid</SelectItem>
-                              <SelectItem value="Any">Any</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormDescription>
-                            We'll prioritize showing results from your preferred chain
-                          </FormDescription>
-                        </FormItem>
-                      )}
-                    />
-                  </CardContent>
-                </Card>
-              </TabsContent>
 
               {/* Notifications Tab */}
               <TabsContent value="notifications">
