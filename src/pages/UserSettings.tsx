@@ -92,6 +92,7 @@ const UserSettings = () => {
     phoneNumber: "",
     additionalDetails: "",
   });
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
 
   // Address handler functions
   const handleEditAddress = (address: Address) => {
@@ -146,6 +147,10 @@ const UserSettings = () => {
     });
   };
 
+  const handleLogout = () => {
+    window.location.href = "/";
+  };
+
   // Watch accessibility settings and apply visual changes
   const largeTextMode = form.watch("largeTextMode");
   const highContrastMode = form.watch("highContrastMode");
@@ -190,7 +195,11 @@ const UserSettings = () => {
             <Logo size="small" />
           </Link>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setShowLogoutDialog(true)}
+            >
               <LogOut className="mr-2 h-4 w-4" />
               Logout
             </Button>
@@ -627,6 +636,27 @@ const UserSettings = () => {
           </div>
         </Form>
       </main>
+
+      {/* Logout Confirmation Dialog */}
+      <AlertDialog open={showLogoutDialog} onOpenChange={setShowLogoutDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Logout Confirmation</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to logout? You'll need to sign in again to access your account.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleLogout}
+              className="bg-primary hover:bg-primary/90"
+            >
+              Logout
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
