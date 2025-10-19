@@ -20,8 +20,7 @@ const STORAGE_KEY = "pharmfind_user_settings";
 const settingsSchema = z.object({
   // Notifications
   orderStatusUpdates: z.boolean().default(true),
-  promotionalOffers: z.boolean().default(false),
-  medicationReminders: z.boolean().default(true),
+  promotionalOffers: z.boolean().default(true),
   notificationMethod: z.string().default("All"),
   
   // Accessibility
@@ -44,8 +43,7 @@ type SettingsFormValues = z.infer<typeof settingsSchema>;
 
 const defaultValues: SettingsFormValues = {
   orderStatusUpdates: true,
-  promotionalOffers: false,
-  medicationReminders: true,
+  promotionalOffers: true,
   notificationMethod: "All",
   largeTextMode: false,
   highContrastMode: false,
@@ -203,24 +201,6 @@ const UserSettings = () => {
 
                     <FormField
                       control={form.control}
-                      name="medicationReminders"
-                      render={({ field }) => (
-                        <FormItem className="flex items-center justify-between rounded-lg border p-4">
-                          <div className="space-y-0.5">
-                            <FormLabel className="text-base">Medication reminders</FormLabel>
-                            <FormDescription>
-                              Reminders to take your medication and refill prescriptions
-                            </FormDescription>
-                          </div>
-                          <FormControl>
-                            <Switch checked={field.value} onCheckedChange={field.onChange} />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
                       name="notificationMethod"
                       render={({ field }) => (
                         <FormItem>
@@ -233,7 +213,6 @@ const UserSettings = () => {
                             </FormControl>
                             <SelectContent>
                               <SelectItem value="Email">Email</SelectItem>
-                              <SelectItem value="SMS">SMS</SelectItem>
                               <SelectItem value="Push">Push</SelectItem>
                               <SelectItem value="All">All</SelectItem>
                             </SelectContent>
