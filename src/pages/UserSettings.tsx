@@ -194,22 +194,6 @@ const UserSettings = () => {
           <Link to="/dashboard">
             <Logo size="small" />
           </Link>
-          <div className="flex gap-2">
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => setShowLogoutDialog(true)}
-            >
-              <LogOut className="mr-2 h-4 w-4" />
-              Logout
-            </Button>
-            <Link to="/dashboard">
-              <Button variant="ghost" size="sm">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to Dashboard
-              </Button>
-            </Link>
-          </div>
         </div>
       </header>
 
@@ -221,6 +205,24 @@ const UserSettings = () => {
             <h1 className="text-3xl font-bold">Settings</h1>
             <p className="text-muted-foreground">Manage your account and preferences</p>
           </div>
+        </div>
+
+        <div className="flex flex-col gap-2 mb-6">
+          <Link to="/dashboard">
+            <Button variant="ghost" size="sm" className="w-fit">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Dashboard
+            </Button>
+          </Link>
+          <Button 
+            variant="outline" 
+            size="sm"
+            className="w-fit"
+            onClick={() => setShowLogoutDialog(true)}
+          >
+            <LogOut className="mr-2 h-4 w-4" />
+            Logout
+          </Button>
         </div>
 
         <Form {...form}>
