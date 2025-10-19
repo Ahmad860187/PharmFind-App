@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormDescription } from "@/components/ui/form";
 import { Switch } from "@/components/ui/switch";
-import { Checkbox } from "@/components/ui/checkbox";
+
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -24,11 +24,6 @@ const settingsSchema = z.object({
   largeTextMode: z.boolean().default(false),
   highContrastMode: z.boolean().default(false),
   
-  // Privacy & Security
-  sharePrescriptionHistory: z.boolean().default(false),
-  enableTwoFactorAuth: z.boolean().default(false),
-  keepLoggedIn: z.boolean().default(false),
-  
   // Delivery Preferences
   defaultHomeDelivery: z.boolean().default(false),
   deliveryInstructions: z.string().default(""),
@@ -43,9 +38,6 @@ const defaultValues: SettingsFormValues = {
   notificationMethod: "All",
   largeTextMode: false,
   highContrastMode: false,
-  sharePrescriptionHistory: false,
-  enableTwoFactorAuth: false,
-  keepLoggedIn: false,
   defaultHomeDelivery: false,
   deliveryInstructions: "",
   preferredDeliveryTime: "No preference",
@@ -107,10 +99,9 @@ const UserSettings = () => {
         <Form {...form}>
           <div className="space-y-6">
             <Tabs defaultValue="notifications" className="w-full">
-              <TabsList className="grid w-full grid-cols-4">
+              <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="notifications">Notifications</TabsTrigger>
                 <TabsTrigger value="accessibility">Accessibility</TabsTrigger>
-                <TabsTrigger value="privacy">Privacy</TabsTrigger>
                 <TabsTrigger value="delivery">Delivery</TabsTrigger>
               </TabsList>
 
@@ -230,71 +221,6 @@ const UserSettings = () => {
                       )}
                     />
 
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              {/* Privacy & Security Tab */}
-              <TabsContent value="privacy">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Privacy & Security</CardTitle>
-                    <CardDescription>Manage your privacy and security preferences</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    <FormField
-                      control={form.control}
-                      name="sharePrescriptionHistory"
-                      render={({ field }) => (
-                        <FormItem className="flex items-center justify-between rounded-lg border p-4">
-                          <div className="space-y-0.5">
-                            <FormLabel className="text-base">Share prescription history with healthcare providers</FormLabel>
-                            <FormDescription>
-                              Allow your doctors to access your prescription history
-                            </FormDescription>
-                          </div>
-                          <FormControl>
-                            <Switch checked={field.value} onCheckedChange={field.onChange} />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="enableTwoFactorAuth"
-                      render={({ field }) => (
-                        <FormItem className="flex items-center justify-between rounded-lg border p-4">
-                          <div className="space-y-0.5">
-                            <FormLabel className="text-base">Enable two-factor authentication</FormLabel>
-                            <FormDescription>
-                              Add an extra layer of security to your account
-                            </FormDescription>
-                          </div>
-                          <FormControl>
-                            <Switch checked={field.value} onCheckedChange={field.onChange} />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="keepLoggedIn"
-                      render={({ field }) => (
-                        <FormItem className="flex items-start space-x-3 space-y-0 rounded-lg border p-4">
-                          <FormControl>
-                            <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-                          </FormControl>
-                          <div className="space-y-1 leading-none">
-                            <FormLabel>Keep me logged in on this device</FormLabel>
-                            <FormDescription>
-                              Stay signed in for faster access (not recommended on shared devices)
-                            </FormDescription>
-                          </div>
-                        </FormItem>
-                      )}
-                    />
                   </CardContent>
                 </Card>
               </TabsContent>
