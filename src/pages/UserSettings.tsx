@@ -25,6 +25,36 @@ type Address = {
   additionalDetails: string;
 };
 
+const INITIAL_ADDRESSES: Address[] = [
+  {
+    id: "1",
+    nickname: "Home",
+    fullName: "John Doe",
+    building: "Tala building, George Zouwein",
+    floor: "8th floor",
+    phoneNumber: "+961 70256649",
+    additionalDetails: "",
+  },
+  {
+    id: "2",
+    nickname: "Home",
+    fullName: "John Doe",
+    building: "sky suites, makhoul street",
+    floor: "502",
+    phoneNumber: "+961 70256649",
+    additionalDetails: "",
+  },
+  {
+    id: "3",
+    nickname: "Home",
+    fullName: "John Doe",
+    building: "AUB main gate, Bliss street",
+    floor: "none",
+    phoneNumber: "+961 70256649",
+    additionalDetails: "",
+  },
+];
+
 const settingsSchema = z.object({
   // Account Info
   fullName: z.string().default(""),
@@ -77,35 +107,7 @@ const UserSettings = () => {
   });
 
   // Address management state
-  const [addresses, setAddresses] = useState<Address[]>([
-    {
-      id: "1",
-      nickname: "Home",
-      fullName: "John Doe",
-      building: "Tala building, George Zouwein",
-      floor: "8th floor",
-      phoneNumber: "+961 70256649",
-      additionalDetails: "",
-    },
-    {
-      id: "2",
-      nickname: "Home",
-      fullName: "John Doe",
-      building: "sky suites, makhoul street",
-      floor: "502",
-      phoneNumber: "+961 70256649",
-      additionalDetails: "",
-    },
-    {
-      id: "3",
-      nickname: "Home",
-      fullName: "John Doe",
-      building: "AUB main gate, Bliss street",
-      floor: "none",
-      phoneNumber: "+961 70256649",
-      additionalDetails: "",
-    },
-  ]);
+  const [addresses, setAddresses] = useState<Address[]>(INITIAL_ADDRESSES);
 
   const [isAddingAddress, setIsAddingAddress] = useState(false);
   const [editingAddressId, setEditingAddressId] = useState<string | null>(null);
@@ -191,6 +193,21 @@ const UserSettings = () => {
       document.documentElement.classList.remove("high-contrast-mode");
     }
   }, [highContrastMode]);
+
+  // Reset addresses to initial state when component mounts
+  useEffect(() => {
+    setAddresses(INITIAL_ADDRESSES);
+    setIsAddingAddress(false);
+    setEditingAddressId(null);
+    setCurrentAddress({
+      nickname: "Home",
+      fullName: "",
+      building: "",
+      floor: "",
+      phoneNumber: "",
+      additionalDetails: "",
+    });
+  }, []);
 
   return (
     <div className="min-h-screen bg-background">
