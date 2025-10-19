@@ -1,8 +1,8 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { ArrowLeft, Settings, LogOut } from "lucide-react";
+import { ArrowLeft, Settings, LogOut, Home, Edit, Trash2, Plus, MapPin } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,7 +12,18 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import Logo from "@/components/Logo";
+
+type Address = {
+  id: string;
+  nickname: "Home" | "Work" | "Mom's" | "Other";
+  fullName: string;
+  building: string;
+  floor: string;
+  phoneNumber: string;
+  additionalDetails: string;
+};
 
 const settingsSchema = z.object({
   // Account Info
@@ -64,6 +75,102 @@ const UserSettings = () => {
     resolver: zodResolver(settingsSchema),
     defaultValues,
   });
+
+  // Address management state
+  const [addresses, setAddresses] = useState<Address[]>([
+    {
+      id: "1",
+      nickname: "Home",
+      fullName: "John Doe",
+      building: "Tala building, George Zouwein",
+      floor: "8th floor",
+      phoneNumber: "+961 70256649",
+      additionalDetails: "",
+    },
+    {
+      id: "2",
+      nickname: "Home",
+      fullName: "John Doe",
+      building: "sky suites, makhoul street",
+      floor: "502",
+      phoneNumber: "+961 70256649",
+      additionalDetails: "",
+    },
+    {
+      id: "3",
+      nickname: "Home",
+      fullName: "John Doe",
+      building: "AUB main gate, Bliss street",
+      floor: "none",
+      phoneNumber: "+961 70256649",
+      additionalDetails: "",
+    },
+  ]);
+
+  const [isAddingAddress, setIsAddingAddress] = useState(false);
+  const [editingAddressId, setEditingAddressId] = useState<string | null>(null);
+  const [deleteAddressId, setDeleteAddressId] = useState<string | null>(null);
+  const [currentAddress, setCurrentAddress] = useState<Partial<Address>>({
+    nickname: "Home",
+    fullName: "",
+    building: "",
+    floor: "",
+    phoneNumber: "",
+    additionalDetails: "",
+  });
+
+  // Address handler functions
+  const handleEditAddress = (address: Address) => {
+    setEditingAddressId(address.id);
+    setCurrentAddress(address);
+    setIsAddingAddress(true);
+  };
+
+  const handleDeleteAddress = (id: string) => {
+    setAddresses(addresses.filter(addr => addr.id !== id));
+    setDeleteAddressId(null);
+  };
+
+  const handleSaveAddress = () => {
+    if (editingAddressId) {
+      // Update existing address
+      setAddresses(addresses.map(addr => 
+        addr.id === editingAddressId ? { ...addr, ...currentAddress } as Address : addr
+      ));
+    } else {
+      // Add new address
+      const newAddress: Address = {
+        id: Date.now().toString(),
+        ...(currentAddress as Address),
+      };
+      setAddresses([...addresses, newAddress]);
+    }
+    
+    // Reset form
+    setIsAddingAddress(false);
+    setEditingAddressId(null);
+    setCurrentAddress({
+      nickname: "Home",
+      fullName: "",
+      building: "",
+      floor: "",
+      phoneNumber: "",
+      additionalDetails: "",
+    });
+  };
+
+  const handleCancelEdit = () => {
+    setIsAddingAddress(false);
+    setEditingAddressId(null);
+    setCurrentAddress({
+      nickname: "Home",
+      fullName: "",
+      building: "",
+      floor: "",
+      phoneNumber: "",
+      additionalDetails: "",
+    });
+  };
 
   // Watch accessibility settings and apply visual changes
   const largeTextMode = form.watch("largeTextMode");
@@ -247,75 +354,164 @@ const UserSettings = () => {
               <TabsContent value="delivery">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Delivery Preferences</CardTitle>
-                    <CardDescription>Set your delivery options and instructions</CardDescription>
+                    <CardTitle>{isAddingAddress ? "Address" : "Delivery Addresses"}</CardTitle>
+                    <CardDescription>
+                      {isAddingAddress ? "Add or edit your delivery address" : "Manage your saved delivery addresses"}
+                    </CardDescription>
                   </CardHeader>
-                  <CardContent className="space-y-6">
-                    <FormField
-                      control={form.control}
-                      name="defaultHomeDelivery"
-                      render={({ field }) => (
-                        <FormItem className="flex items-center justify-between rounded-lg border p-4">
-                          <div className="space-y-0.5">
-                            <FormLabel className="text-base">Default to home delivery</FormLabel>
-                            <FormDescription>
-                              Automatically select home delivery for all orders
-                            </FormDescription>
+                  <CardContent>
+                    {!isAddingAddress ? (
+                      /* Address List View */
+                      <div className="space-y-4">
+                        <div className="space-y-3">
+                          {addresses.map((address) => (
+                            <div
+                              key={address.id}
+                              className="flex items-start gap-3 p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+                            >
+                              <Home className="h-5 w-5 text-muted-foreground mt-1" />
+                              <div className="flex-1 min-w-0">
+                                <h3 className="font-semibold">{address.nickname}</h3>
+                                <p className="text-sm text-muted-foreground">
+                                  {address.building}, {address.floor}
+                                </p>
+                              </div>
+                              <div className="flex gap-2">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="text-primary hover:text-primary"
+                                  onClick={() => handleEditAddress(address)}
+                                >
+                                  Edit
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="text-destructive hover:text-destructive"
+                                  onClick={() => setDeleteAddressId(address.id)}
+                                >
+                                  Delete
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+
+                        <Button
+                          className="w-full"
+                          size="lg"
+                          onClick={() => setIsAddingAddress(true)}
+                        >
+                          <Plus className="mr-2 h-5 w-5" />
+                          Add new address
+                        </Button>
+                      </div>
+                    ) : (
+                      /* Address Form View */
+                      <div className="space-y-6">
+                        {/* Location Pin Placeholder */}
+                        <div className="relative h-40 rounded-lg overflow-hidden bg-muted flex items-center justify-center">
+                          <MapPin className="h-12 w-12 text-primary" />
+                          <span className="absolute top-2 right-2 text-sm text-primary font-medium">
+                            Refine map
+                          </span>
+                        </div>
+
+                        {/* Nickname Selection */}
+                        <div className="space-y-2">
+                          <label className="text-lg font-semibold">Choose a Nickname</label>
+                          <div className="grid grid-cols-4 gap-2">
+                            {(["Home", "Work", "Mom's", "Other"] as const).map((nickname) => (
+                              <button
+                                key={nickname}
+                                type="button"
+                                className={`flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-colors ${
+                                  currentAddress.nickname === nickname
+                                    ? "border-primary bg-primary/5"
+                                    : "border-border hover:border-primary/50"
+                                }`}
+                                onClick={() => setCurrentAddress({ ...currentAddress, nickname })}
+                              >
+                                <Home className={currentAddress.nickname === nickname ? "text-primary" : "text-muted-foreground"} />
+                                <span className={currentAddress.nickname === nickname ? "text-primary font-medium" : "text-muted-foreground"}>
+                                  {nickname}
+                                </span>
+                              </button>
+                            ))}
                           </div>
-                          <FormControl>
-                            <Switch checked={field.value} onCheckedChange={field.onChange} />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
+                        </div>
 
-                    <FormField
-                      control={form.control}
-                      name="deliveryInstructions"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Delivery instructions</FormLabel>
-                          <FormControl>
-                            <Textarea
-                              placeholder="E.g., Leave at front door, ring doorbell twice..."
-                              className="resize-none"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormDescription>
-                            Special instructions for delivery personnel
-                          </FormDescription>
-                        </FormItem>
-                      )}
-                    />
+                        {/* Address Details */}
+                        <div className="space-y-4">
+                          <h3 className="text-lg font-semibold">Give us the Details</h3>
+                          
+                          <Input
+                            placeholder="Full Name"
+                            value={currentAddress.fullName || ""}
+                            onChange={(e) => setCurrentAddress({ ...currentAddress, fullName: e.target.value })}
+                          />
+                          
+                          <Input
+                            placeholder="Building/Apartment"
+                            value={currentAddress.building || ""}
+                            onChange={(e) => setCurrentAddress({ ...currentAddress, building: e.target.value })}
+                          />
+                          
+                          <Input
+                            placeholder="Floor/Unit"
+                            value={currentAddress.floor || ""}
+                            onChange={(e) => setCurrentAddress({ ...currentAddress, floor: e.target.value })}
+                          />
+                          
+                          <Input
+                            placeholder="Phone Number (e.g., LB +961 70256649)"
+                            value={currentAddress.phoneNumber || ""}
+                            onChange={(e) => setCurrentAddress({ ...currentAddress, phoneNumber: e.target.value })}
+                          />
+                          
+                          <Textarea
+                            placeholder="Additional Details (e.g., Building to the left of ogero)"
+                            value={currentAddress.additionalDetails || ""}
+                            onChange={(e) => setCurrentAddress({ ...currentAddress, additionalDetails: e.target.value })}
+                            className="resize-none"
+                          />
+                        </div>
 
-                    <FormField
-                      control={form.control}
-                      name="preferredDeliveryTime"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Preferred delivery time</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select preferred time" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="Morning">Morning (8AM - 12PM)</SelectItem>
-                              <SelectItem value="Afternoon">Afternoon (12PM - 5PM)</SelectItem>
-                              <SelectItem value="Evening">Evening (5PM - 9PM)</SelectItem>
-                              <SelectItem value="No preference">No preference</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormDescription>
-                            We'll try to deliver during your preferred time window
-                          </FormDescription>
-                        </FormItem>
-                      )}
-                    />
+                        {/* Action Buttons */}
+                        <div className="flex gap-2">
+                          <Button className="flex-1" size="lg" onClick={handleSaveAddress}>
+                            Confirm
+                          </Button>
+                          <Button variant="outline" size="lg" onClick={handleCancelEdit}>
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
+
+                {/* Delete Confirmation Dialog */}
+                <AlertDialog open={!!deleteAddressId} onOpenChange={() => setDeleteAddressId(null)}>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete Address</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Are you sure you want to delete this address? This action cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() => deleteAddressId && handleDeleteAddress(deleteAddressId)}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </TabsContent>
 
               {/* Notifications Tab */}
