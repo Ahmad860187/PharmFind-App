@@ -1,14 +1,25 @@
 import { Link } from "react-router-dom";
-import { Settings } from "lucide-react";
+import { Settings, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import Logo from "@/components/Logo";
 
 const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card/50 backdrop-blur-sm">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between gap-4">
           <Logo size="small" />
+          
+          <div className="flex-1 max-w-md relative hidden sm:block">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Search medications, pharmacies..."
+              className="pl-10"
+            />
+          </div>
+
           <Link to="/user-settings">
             <Button variant="outline" size="sm">
               <Settings className="mr-2 h-4 w-4" />
