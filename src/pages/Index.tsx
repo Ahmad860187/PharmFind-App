@@ -8,24 +8,27 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card/50 backdrop-blur-sm">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between gap-4">
-          <Logo size="small" />
-          
-          <div className="flex-1 max-w-md relative hidden sm:block">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Search medications, pharmacies..."
-              className="pl-10"
-            />
+        <div className="container mx-auto px-4 py-4 relative">
+          <div className="flex items-center justify-between">
+            <Logo size="small" />
+            <Link to="/user-settings">
+              <Button variant="outline" size="sm">
+                <Settings className="mr-2 h-4 w-4" />
+                Settings
+              </Button>
+            </Link>
           </div>
-
-          <Link to="/user-settings">
-            <Button variant="outline" size="sm">
-              <Settings className="mr-2 h-4 w-4" />
-              Settings
-            </Button>
-          </Link>
+          
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md px-4 hidden sm:block">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="search"
+                placeholder="Search medications, pharmacies..."
+                className="pl-10"
+              />
+            </div>
+          </div>
         </div>
       </header>
       
