@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Search, Pill, MapPin, Phone, Clock, ChevronDown, ChevronUp } from "lucide-react";
+import { Search, Pill, MapPin, Phone, Clock, ChevronDown, ChevronUp, ArrowLeft } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -63,7 +63,12 @@ const SearchResults = () => {
       <header className="border-b bg-card">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between mb-4">
-            <Logo />
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="icon" onClick={() => navigate("/dashboard")}>
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+              <Logo />
+            </div>
             <Button variant="ghost" onClick={() => navigate("/user-settings")}>
               Settings
             </Button>
