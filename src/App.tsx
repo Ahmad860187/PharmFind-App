@@ -8,6 +8,7 @@ import Auth from "./pages/Auth";
 import ForgotPassword from "./pages/ForgotPassword";
 import UserSettings from "./pages/UserSettings";
 import SearchResults from "./pages/SearchResults";
+import PharmacyStore from "./pages/PharmacyStore";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,6 +25,7 @@ const App = () => (
           <Route path="/dashboard" element={<Index />} />
           <Route path="/user-settings" element={<UserSettings />} />
           <Route path="/search" element={<SearchResults />} />
+          <Route path="/pharmacy/:id" element={<PharmacyStore />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
