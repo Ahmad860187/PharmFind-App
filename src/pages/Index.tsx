@@ -7,34 +7,61 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import Logo from "@/components/Logo";
 
-// Mock data for featured pharmacies
+// Mock data for featured pharmacies (Real Beirut pharmacies)
 const mockPharmacies = [
   {
     id: 1,
-    name: "CVS Pharmacy Downtown",
-    address: "123 Main Street, Downtown",
-    distance: "2.3 km",
-    phone: "(555) 123-4567",
+    name: "Habib Pharmacy",
+    address: "Hamra Street, Hamra, Beirut",
+    distance: "1.8 km",
+    phone: "+961 1 340 555",
     hours: "Open until 10:00 PM",
     isOpen: true,
   },
   {
     id: 2,
-    name: "Walgreens Central",
-    address: "456 Oak Avenue, Central",
-    distance: "3.1 km",
-    phone: "(555) 234-5678",
+    name: "Wardieh Pharmacy",
+    address: "Achrafieh Main Road, Achrafieh, Beirut",
+    distance: "2.4 km",
+    phone: "+961 1 200 800",
     hours: "Open 24 hours",
     isOpen: true,
   },
   {
     id: 3,
-    name: "Rite Aid Express",
-    address: "789 Pine Road, East Side",
-    distance: "4.5 km",
-    phone: "(555) 345-6789",
+    name: "Verdun Pharmacy",
+    address: "Verdun Street, Verdun, Beirut",
+    distance: "3.2 km",
+    phone: "+961 1 803 900",
+    hours: "Open until 11:00 PM",
+    isOpen: true,
+  },
+  {
+    id: 4,
+    name: "Pharmacie Hamra",
+    address: "Bliss Street, Hamra, Beirut",
+    distance: "1.5 km",
+    phone: "+961 1 350 200",
+    hours: "Open until 9:00 PM",
+    isOpen: true,
+  },
+  {
+    id: 5,
+    name: "Gefinor Pharmacy",
+    address: "Clemenceau Street, Hamra, Beirut",
+    distance: "2.1 km",
+    phone: "+961 1 369 400",
     hours: "Opens at 8:00 AM",
     isOpen: false,
+  },
+  {
+    id: 6,
+    name: "ABC Achrafieh Pharmacy",
+    address: "ABC Mall, Achrafieh, Beirut",
+    distance: "3.8 km",
+    phone: "+961 1 209 100",
+    hours: "Open until 10:00 PM",
+    isOpen: true,
   },
 ];
 
