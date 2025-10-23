@@ -1,0 +1,481 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { ArrowLeft, Truck, Package, CheckCircle, MapPin, Phone, Pill } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Separator } from "@/components/ui/separator";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import Logo from "@/components/Logo";
+import { CartIcon } from "@/components/CartIcon";
+import { useCart } from "@/contexts/CartContext";
+import { toast } from "@/hooks/use-toast";
+import { z } from "zod";
+
+const pharmacyDetails: Record<string, any> = {
+  "1": { id: 1, name: "Habib Pharmacy", address: "Hamra Street, Beirut", phone: "+961 1 340555" },
+  "2": { id: 2, name: "Wardieh Pharmacy", address: "Achrafieh, Beirut", phone: "+961 1 200300" },
+  "3": { id: 3, name: "Raouche Pharmacy", address: "Raouche, Beirut", phone: "+961 1 789456" },
+  "4": { id: 4, name: "Verdun Pharmacy", address: "Verdun Street, Beirut", phone: "+961 1 456789" },
+  "5": { id: 5, name: "Mazraa Pharmacy", address: "Mazraa, Beirut", phone: "+961 1 654321" },
+  "6": { id: 6, name: "Clemenceau Pharmacy", address: "Clemenceau Street, Beirut", phone: "+961 1 987654" },
+};
+
+const deliverySchema = z.object({
+  fullName: z.string().min(2, "Name must be at least 2 characters"),
+  phone: z.string().regex(/^\+?[0-9]{8,15}$/, "Invalid phone number"),
+  address: z.string().min(5, "Address is required"),
+  building: z.string().optional(),
+  floor: z.string().optional(),
+  deliveryNotes: z.string().optional(),
+});
+
+const reservationSchema = z.object({
+  fullName: z.string().min(2, "Name must be at least 2 characters"),
+  phone: z.string().regex(/^\+?[0-9]{8,15}$/, "Invalid phone number"),
+  pickupNotes: z.string().optional(),
+});
+
+const Checkout = () => {
+  const navigate = useNavigate();
+  const { cartItems, getItemsByPharmacy, clearCart } = useCart();
+  const itemsByPharmacy = getItemsByPharmacy();
+
+  const [deliveryForm, setDeliveryForm] = useState({
+    fullName: "",
+    phone: "",
+    address: "",
+    building: "",
+    floor: "",
+    deliveryNotes: "",
+  });
+
+  const [reservationForm, setReservationForm] = useState({
+    fullName: "",
+    phone: "",
+    pickupNotes: "",
+  });
+
+  const [pickupTimes, setPickupTimes] = useState<Record<number, string>>({});
+  const [paymentMethod, setPaymentMethod] = useState<string>("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const hasDelivery = cartItems.some((item) => item.type === 'delivery');
+  const hasReservation = cartItems.some((item) => item.type === 'reservation');
+
+  const reservationPharmacies = Object.entries(itemsByPharmacy).filter(([, items]) =>
+    items.some((item) => item.type === 'reservation')
+  );
+
+  const subtotal = cartItems.reduce((total, item) => total + item.price * item.quantity, 0);
+  const deliveryPharmacies = new Set(
+    cartItems.filter((item) => item.type === 'delivery').map((item) => item.pharmacyId)
+  );
+  const deliveryFees = deliveryPharmacies.size * 1;
+  const total = subtotal + deliveryFees;
+
+  if (cartItems.length === 0) {
+    navigate("/cart");
+    return null;
+  }
+
+  const validateForms = (): boolean => {
+    const newErrors: Record<string, string> = {};
+
+    // Validate delivery form if has delivery items
+    if (hasDelivery) {
+      try {
+        deliverySchema.parse(deliveryForm);
+      } catch (error) {
+        if (error instanceof z.ZodError) {
+          error.errors.forEach((err) => {
+            if (err.path[0]) {
+              newErrors[`delivery_${err.path[0]}`] = err.message;
+            }
+          });
+        }
+      }
+    }
+
+    // Validate reservation form if has reservation items
+    if (hasReservation) {
+      try {
+        reservationSchema.parse(reservationForm);
+      } catch (error) {
+        if (error instanceof z.ZodError) {
+          error.errors.forEach((err) => {
+            if (err.path[0]) {
+              newErrors[`reservation_${err.path[0]}`] = err.message;
+            }
+          });
+        }
+      }
+
+      // Validate pickup times
+      reservationPharmacies.forEach(([pharmacyId]) => {
+        if (!pickupTimes[Number(pharmacyId)]) {
+          newErrors[`pickup_${pharmacyId}`] = "Please select a pickup time";
+        }
+      });
+    }
+
+    // Validate payment method
+    if (!paymentMethod) {
+      newErrors.paymentMethod = "Please select a payment method";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handlePlaceOrder = async () => {
+    if (!validateForms()) {
+      toast({
+        title: "Validation Error",
+        description: "Please fill in all required fields correctly.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    // Simulate API call
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
+    const orderId = `ORD-${Date.now()}`;
+    
+    // Store order data for confirmation page
+    const orderData = {
+      orderId,
+      items: cartItems,
+      itemsByPharmacy,
+      deliveryForm: hasDelivery ? deliveryForm : null,
+      reservationForm: hasReservation ? reservationForm : null,
+      pickupTimes,
+      paymentMethod,
+      subtotal,
+      deliveryFees,
+      total,
+    };
+    
+    localStorage.setItem('current_order', JSON.stringify(orderData));
+    
+    clearCart();
+    navigate(`/order-confirmation?orderId=${orderId}`);
+  };
+
+  return (
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <header className="border-b bg-card sticky top-0 z-10">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="icon" onClick={() => navigate("/cart")}>
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+              <Logo />
+            </div>
+            <div className="flex items-center gap-2">
+              <CartIcon />
+              <Button variant="ghost" onClick={() => navigate("/user-settings")}>
+                Settings
+              </Button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div className="container mx-auto px-4 py-6 max-w-7xl">
+        {/* Progress Indicator */}
+        <div className="flex items-center justify-center mb-8">
+          <div className="flex items-center gap-2">
+            <CheckCircle className="h-5 w-5 text-primary" />
+            <span className="text-sm font-medium">Cart</span>
+            <div className="h-px w-12 bg-primary" />
+            <CheckCircle className="h-5 w-5 text-primary" />
+            <span className="text-sm font-medium">Checkout</span>
+            <div className="h-px w-12 bg-border" />
+            <div className="h-5 w-5 rounded-full border-2" />
+            <span className="text-sm text-muted-foreground">Confirmation</span>
+          </div>
+        </div>
+
+        <h1 className="text-3xl font-bold mb-6">Checkout</h1>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Forms */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Delivery Form */}
+            {hasDelivery && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Truck className="h-5 w-5" />
+                    Delivery Information
+                  </CardTitle>
+                  <CardDescription>Where should we deliver your order?</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="delivery-name">Full Name *</Label>
+                      <Input
+                        id="delivery-name"
+                        value={deliveryForm.fullName}
+                        onChange={(e) => setDeliveryForm({ ...deliveryForm, fullName: e.target.value })}
+                        placeholder="John Doe"
+                      />
+                      {errors.delivery_fullName && (
+                        <p className="text-sm text-destructive">{errors.delivery_fullName}</p>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="delivery-phone">Phone Number *</Label>
+                      <Input
+                        id="delivery-phone"
+                        value={deliveryForm.phone}
+                        onChange={(e) => setDeliveryForm({ ...deliveryForm, phone: e.target.value })}
+                        placeholder="+961 1 234567"
+                      />
+                      {errors.delivery_phone && (
+                        <p className="text-sm text-destructive">{errors.delivery_phone}</p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="delivery-address">Street Address *</Label>
+                    <Input
+                      id="delivery-address"
+                      value={deliveryForm.address}
+                      onChange={(e) => setDeliveryForm({ ...deliveryForm, address: e.target.value })}
+                      placeholder="123 Main Street"
+                    />
+                    {errors.delivery_address && (
+                      <p className="text-sm text-destructive">{errors.delivery_address}</p>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="delivery-building">Building Name/Number</Label>
+                      <Input
+                        id="delivery-building"
+                        value={deliveryForm.building}
+                        onChange={(e) => setDeliveryForm({ ...deliveryForm, building: e.target.value })}
+                        placeholder="Building A"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="delivery-floor">Floor</Label>
+                      <Input
+                        id="delivery-floor"
+                        value={deliveryForm.floor}
+                        onChange={(e) => setDeliveryForm({ ...deliveryForm, floor: e.target.value })}
+                        placeholder="3rd Floor"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="delivery-notes">Delivery Notes</Label>
+                    <Textarea
+                      id="delivery-notes"
+                      value={deliveryForm.deliveryNotes}
+                      onChange={(e) => setDeliveryForm({ ...deliveryForm, deliveryNotes: e.target.value })}
+                      placeholder="Any special instructions for delivery..."
+                      rows={3}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Reservation Form */}
+            {hasReservation && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Package className="h-5 w-5" />
+                    Pickup Information
+                  </CardTitle>
+                  <CardDescription>When would you like to pick up your order?</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="reservation-name">Full Name *</Label>
+                      <Input
+                        id="reservation-name"
+                        value={reservationForm.fullName}
+                        onChange={(e) => setReservationForm({ ...reservationForm, fullName: e.target.value })}
+                        placeholder="John Doe"
+                      />
+                      {errors.reservation_fullName && (
+                        <p className="text-sm text-destructive">{errors.reservation_fullName}</p>
+                      )}
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="reservation-phone">Phone Number *</Label>
+                      <Input
+                        id="reservation-phone"
+                        value={reservationForm.phone}
+                        onChange={(e) => setReservationForm({ ...reservationForm, phone: e.target.value })}
+                        placeholder="+961 1 234567"
+                      />
+                      {errors.reservation_phone && (
+                        <p className="text-sm text-destructive">{errors.reservation_phone}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Pickup times for each pharmacy */}
+                  {reservationPharmacies.map(([pharmacyId, items]) => {
+                    const pharmacy = pharmacyDetails[pharmacyId];
+                    return (
+                      <div key={pharmacyId} className="p-4 border rounded-lg space-y-3">
+                        <div>
+                          <h4 className="font-semibold mb-1">{pharmacy.name}</h4>
+                          <p className="text-sm text-muted-foreground flex items-center gap-1">
+                            <MapPin className="h-3 w-3" /> {pharmacy.address}
+                          </p>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor={`pickup-${pharmacyId}`}>Preferred Pickup Time *</Label>
+                          <Select
+                            value={pickupTimes[Number(pharmacyId)] || ""}
+                            onValueChange={(value) => setPickupTimes({ ...pickupTimes, [Number(pharmacyId)]: value })}
+                          >
+                            <SelectTrigger id={`pickup-${pharmacyId}`}>
+                              <SelectValue placeholder="Select time slot" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="morning">Morning (9 AM - 12 PM)</SelectItem>
+                              <SelectItem value="afternoon">Afternoon (12 PM - 5 PM)</SelectItem>
+                              <SelectItem value="evening">Evening (5 PM - 9 PM)</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          {errors[`pickup_${pharmacyId}`] && (
+                            <p className="text-sm text-destructive">{errors[`pickup_${pharmacyId}`]}</p>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                  <div className="space-y-2">
+                    <Label htmlFor="pickup-notes">Notes</Label>
+                    <Textarea
+                      id="pickup-notes"
+                      value={reservationForm.pickupNotes}
+                      onChange={(e) => setReservationForm({ ...reservationForm, pickupNotes: e.target.value })}
+                      placeholder="Any special instructions..."
+                      rows={3}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Payment Method */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Payment Method</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <RadioGroup value={paymentMethod} onValueChange={setPaymentMethod}>
+                  {hasDelivery && (
+                    <div className="flex items-center space-x-2 p-3 border rounded-lg">
+                      <RadioGroupItem value="cash_delivery" id="cash_delivery" />
+                      <Label htmlFor="cash_delivery" className="flex-1 cursor-pointer">
+                        Cash on Delivery
+                      </Label>
+                    </div>
+                  )}
+                  {hasReservation && (
+                    <div className="flex items-center space-x-2 p-3 border rounded-lg">
+                      <RadioGroupItem value="cash_pickup" id="cash_pickup" />
+                      <Label htmlFor="cash_pickup" className="flex-1 cursor-pointer">
+                        Cash on Pickup
+                      </Label>
+                    </div>
+                  )}
+                </RadioGroup>
+                {errors.paymentMethod && (
+                  <p className="text-sm text-destructive mt-2">{errors.paymentMethod}</p>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Order Summary */}
+          <div className="lg:col-span-1">
+            <Card className="sticky top-24">
+              <CardHeader>
+                <CardTitle>Order Summary</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Items grouped by pharmacy */}
+                <div className="space-y-3 max-h-96 overflow-y-auto">
+                  {Object.entries(itemsByPharmacy).map(([pharmacyId, items]) => {
+                    const pharmacy = pharmacyDetails[pharmacyId];
+                    return (
+                      <div key={pharmacyId} className="border-b pb-3 last:border-0">
+                        <h4 className="font-semibold text-sm mb-2">{pharmacy.name}</h4>
+                        {items.map((item) => (
+                          <div key={item.id} className="flex items-start gap-2 text-sm mb-2">
+                            <Pill className="h-4 w-4 text-muted-foreground mt-0.5" />
+                            <div className="flex-1 min-w-0">
+                              <p className="truncate">{item.medicineName}</p>
+                              <p className="text-xs text-muted-foreground">
+                                ${item.price} × {item.quantity}
+                              </p>
+                            </div>
+                            <p className="font-semibold">${(item.price * item.quantity).toFixed(2)}</p>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <Separator />
+
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span>Subtotal:</span>
+                    <span>${subtotal.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm text-muted-foreground">
+                    <span>Delivery fees:</span>
+                    <span>${deliveryFees.toFixed(2)}</span>
+                  </div>
+                  <Separator />
+                  <div className="flex justify-between text-lg font-bold">
+                    <span>Total:</span>
+                    <span>${total.toFixed(2)}</span>
+                  </div>
+                </div>
+
+                <Button
+                  className="w-full"
+                  size="lg"
+                  onClick={handlePlaceOrder}
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "Placing Order..." : "Place Order"}
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Checkout;

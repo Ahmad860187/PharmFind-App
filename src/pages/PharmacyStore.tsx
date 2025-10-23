@@ -5,16 +5,24 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
+import { CartIcon } from "@/components/CartIcon";
+import { useCart } from "@/contexts/CartContext";
+import Logo from "@/components/Logo";
 import {
   ArrowLeft,
   MapPin,
   Phone,
   Clock,
   Pill,
-  ShoppingCart,
-  Calendar,
+  Truck,
+  Package,
   CheckCircle,
+  Plus,
+  Minus,
 } from "lucide-react";
 
 // Mock pharmacy data
@@ -216,8 +224,13 @@ const PharmacyStore = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const searchQuery = searchParams.get("search") || "";
+  const { addToCart } = useCart();
   
   const [medicineSearch, setMedicineSearch] = useState("");
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedMedicine, setSelectedMedicine] = useState<any>(null);
+  const [orderType, setOrderType] = useState<'delivery' | 'reservation'>('delivery');
+  const [quantity, setQuantity] = useState(1);
   const highlightRef = useRef<HTMLDivElement>(null);
 
   const pharmacy = id ? pharmacyDetails[id] : null;
@@ -260,18 +273,34 @@ const PharmacyStore = () => {
     });
   };
 
-  const handleAddToCart = (medicineName: string) => {
-    toast({
-      title: "Added to Cart",
-      description: `${medicineName} has been added to your cart.`,
-    });
+  const handleOpenDialog = (medicine: any) => {
+    setSelectedMedicine(medicine);
+    setOrderType('delivery');
+    setQuantity(1);
+    setDialogOpen(true);
   };
 
-  const handleReserve = (medicineName: string) => {
+  const handleAddToCart = () => {
+    if (!selectedMedicine || !pharmacy) return;
+    
+    addToCart({
+      medicineId: selectedMedicine.id,
+      medicineName: selectedMedicine.name,
+      category: selectedMedicine.category,
+      pharmacyId: Number(id),
+      pharmacyName: pharmacy.name,
+      price: Number(selectedMedicine.price),
+      quantity,
+      type: orderType,
+      stockStatus: selectedMedicine.stockStatus,
+    }, quantity);
+
     toast({
-      title: "Reserved for Pickup",
-      description: `${medicineName} has been reserved. Pick up within 24 hours.`,
+      title: "Added to Cart",
+      description: `${selectedMedicine.name} has been added to your cart for ${orderType}.`,
     });
+
+    setDialogOpen(false);
   };
 
   if (!pharmacy) {
@@ -303,6 +332,7 @@ const PharmacyStore = () => {
             >
               <ArrowLeft className="h-5 w-5" />
             </Button>
+            <Logo />
             <div className="flex-1">
               <div className="flex items-center gap-2 flex-wrap">
                 <h1 className="text-2xl font-bold">{pharmacy.name}</h1>
@@ -311,6 +341,7 @@ const PharmacyStore = () => {
                 </Badge>
               </div>
             </div>
+            <CartIcon />
           </div>
 
           <div className="grid gap-3 text-sm">
@@ -427,27 +458,75 @@ const PharmacyStore = () => {
                         {medicine.stockStatus}
                       </Badge>
                     </div>
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        className="flex-1"
-                        onClick={() => handleAddToCart(medicine.name)}
-                        disabled={medicine.stockStatus === "Out of Stock"}
-                      >
-                        <ShoppingCart className="h-4 w-4 mr-1" />
-                        Add to Cart
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="flex-1"
-                        onClick={() => handleReserve(medicine.name)}
-                        disabled={medicine.stockStatus === "Out of Stock"}
-                      >
-                        <Calendar className="h-4 w-4 mr-1" />
-                        Reserve
-                      </Button>
-                    </div>
+                    <Dialog open={dialogOpen && selectedMedicine?.id === medicine.id} onOpenChange={(open) => { if (!open) setDialogOpen(false); }}>
+                      <DialogTrigger asChild>
+                        <Button
+                          size="sm"
+                          className="w-full"
+                          onClick={() => handleOpenDialog(medicine)}
+                          disabled={medicine.stockStatus === "Out of Stock"}
+                        >
+                          Add to Cart
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Add {medicine.name} to Cart</DialogTitle>
+                          <DialogDescription>Choose how you'd like to get this medicine</DialogDescription>
+                        </DialogHeader>
+                        
+                        <RadioGroup value={orderType} onValueChange={(v) => setOrderType(v as 'delivery' | 'reservation')}>
+                          <div className="flex items-center space-x-2 p-3 border rounded-lg">
+                            <RadioGroupItem value="delivery" id="delivery" />
+                            <Label htmlFor="delivery" className="flex-1 cursor-pointer">
+                              <Truck className="inline h-4 w-4 mr-2" />
+                              Delivery - Get it delivered ($1 fee)
+                            </Label>
+                          </div>
+                          <div className="flex items-center space-x-2 p-3 border rounded-lg">
+                            <RadioGroupItem value="reservation" id="reservation" />
+                            <Label htmlFor="reservation" className="flex-1 cursor-pointer">
+                              <Package className="inline h-4 w-4 mr-2" />
+                              Reservation - Pick up at pharmacy
+                            </Label>
+                          </div>
+                        </RadioGroup>
+
+                        <div className="flex items-center gap-4">
+                          <Label>Quantity:</Label>
+                          <div className="flex items-center gap-2">
+                            <Button size="icon" variant="outline" onClick={() => setQuantity(Math.max(1, quantity - 1))}>
+                              <Minus className="h-4 w-4" />
+                            </Button>
+                            <span className="w-12 text-center font-semibold">{quantity}</span>
+                            <Button size="icon" variant="outline" onClick={() => setQuantity(quantity + 1)}>
+                              <Plus className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+
+                        <div className="bg-muted p-3 rounded-lg">
+                          <div className="flex justify-between text-sm">
+                            <span>Price per unit:</span>
+                            <span className="font-semibold">${medicine.price}</span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span>Quantity:</span>
+                            <span className="font-semibold">{quantity}</span>
+                          </div>
+                          <Separator className="my-2" />
+                          <div className="flex justify-between text-lg font-bold">
+                            <span>Total:</span>
+                            <span>${(Number(medicine.price) * quantity).toFixed(2)}</span>
+                          </div>
+                        </div>
+
+                        <DialogFooter>
+                          <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
+                          <Button onClick={handleAddToCart}>Add to Cart</Button>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
                   </CardContent>
                 </Card>
               );

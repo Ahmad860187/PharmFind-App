@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Logo from "@/components/Logo";
+import { CartIcon } from "@/components/CartIcon";
 
 // Mock data for featured pharmacies (Real Beirut pharmacies)
 const mockPharmacies = [
@@ -91,12 +92,15 @@ const Index = () => {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <Logo size="small" />
-            <Link to="/user-settings">
-              <Button variant="outline" size="sm">
-                <Settings className="mr-2 h-4 w-4" />
-                Settings
-              </Button>
-            </Link>
+            <div className="flex items-center gap-2">
+              <CartIcon />
+              <Link to="/user-settings">
+                <Button variant="outline" size="sm">
+                  <Settings className="mr-2 h-4 w-4" />
+                  Settings
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
       </header>
