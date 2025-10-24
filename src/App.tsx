@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { CartProvider } from "@/contexts/CartContext";
 import { OrdersProvider } from "@/contexts/OrdersContext";
+import { AddressProvider } from "@/contexts/AddressContext";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import ForgotPassword from "./pages/ForgotPassword";
@@ -24,10 +25,11 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <CartProvider>
       <OrdersProvider>
-        <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
+        <AddressProvider>
+          <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
           <Routes>
             <Route path="/" element={<Auth />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -44,7 +46,8 @@ const App = () => (
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
-      </TooltipProvider>
+        </TooltipProvider>
+        </AddressProvider>
       </OrdersProvider>
     </CartProvider>
   </QueryClientProvider>

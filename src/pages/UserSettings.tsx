@@ -14,18 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import Logo from "@/components/Logo";
-
-type Address = {
-  id: string;
-  nickname: "Home" | "Work" | "Mom's" | "Other";
-  fullName: string;
-  building: string;
-  floor: string;
-  phoneNumber: string;
-  additionalDetails: string;
-};
-
-const INITIAL_ADDRESSES: Address[] = [];
+import { useAddresses, Address } from "@/contexts/AddressContext";
 
 const settingsSchema = z.object({
   // Account Info
@@ -78,8 +67,8 @@ const UserSettings = () => {
     defaultValues,
   });
 
-  // Address management state
-  const [addresses, setAddresses] = useState<Address[]>(INITIAL_ADDRESSES);
+  // Address management using context
+  const { addresses, saveAddress, deleteAddress } = useAddresses();
 
   const [isAddingAddress, setIsAddingAddress] = useState(false);
   const [editingAddressId, setEditingAddressId] = useState<string | null>(null);
@@ -87,6 +76,7 @@ const UserSettings = () => {
   const [currentAddress, setCurrentAddress] = useState<Partial<Address>>({
     nickname: "Home",
     fullName: "",
+    address: "",
     building: "",
     floor: "",
     phoneNumber: "",
@@ -102,23 +92,17 @@ const UserSettings = () => {
   };
 
   const handleDeleteAddress = (id: string) => {
-    setAddresses(addresses.filter(addr => addr.id !== id));
+    deleteAddress(id);
     setDeleteAddressId(null);
   };
 
   const handleSaveAddress = () => {
     if (editingAddressId) {
       // Update existing address
-      setAddresses(addresses.map(addr => 
-        addr.id === editingAddressId ? { ...addr, ...currentAddress } as Address : addr
-      ));
+      saveAddress({ ...currentAddress, id: editingAddressId } as Address);
     } else {
       // Add new address
-      const newAddress: Address = {
-        id: Date.now().toString(),
-        ...(currentAddress as Address),
-      };
-      setAddresses([...addresses, newAddress]);
+      saveAddress(currentAddress as Omit<Address, "id">);
     }
     
     // Reset form
@@ -127,6 +111,7 @@ const UserSettings = () => {
     setCurrentAddress({
       nickname: "Home",
       fullName: "",
+      address: "",
       building: "",
       floor: "",
       phoneNumber: "",
@@ -140,6 +125,7 @@ const UserSettings = () => {
     setCurrentAddress({
       nickname: "Home",
       fullName: "",
+      address: "",
       building: "",
       floor: "",
       phoneNumber: "",
@@ -171,14 +157,14 @@ const UserSettings = () => {
     }
   }, [highContrastMode]);
 
-  // Reset addresses to initial state when component mounts
+  // Reset address form when component mounts
   useEffect(() => {
-    setAddresses(INITIAL_ADDRESSES);
     setIsAddingAddress(false);
     setEditingAddressId(null);
     setCurrentAddress({
       nickname: "Home",
       fullName: "",
+      address: "",
       building: "",
       floor: "",
       phoneNumber: "",
@@ -448,6 +434,12 @@ const UserSettings = () => {
                             placeholder="Full Name"
                             value={currentAddress.fullName || ""}
                             onChange={(e) => setCurrentAddress({ ...currentAddress, fullName: e.target.value })}
+                          />
+                          
+                          <Input
+                            placeholder="Street Address"
+                            value={currentAddress.address || ""}
+                            onChange={(e) => setCurrentAddress({ ...currentAddress, address: e.target.value })}
                           />
                           
                           <Input

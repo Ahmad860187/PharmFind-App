@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Truck, Package, CheckCircle, MapPin, Phone, Pill } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ import Logo from "@/components/Logo";
 import { CartIcon } from "@/components/CartIcon";
 import { useCart } from "@/contexts/CartContext";
 import { useOrders } from "@/contexts/OrdersContext";
+import { useAddresses } from "@/contexts/AddressContext";
 import { toast } from "@/hooks/use-toast";
 import { z } from "zod";
 
@@ -45,7 +46,12 @@ const Checkout = () => {
   const navigate = useNavigate();
   const { cartItems, getItemsByPharmacy, clearCart } = useCart();
   const { saveOrder } = useOrders();
+  const { addresses } = useAddresses();
   const itemsByPharmacy = getItemsByPharmacy();
+
+  const [addressMode, setAddressMode] = useState<"saved" | "new">("new");
+  const [selectedAddressId, setSelectedAddressId] = useState<string>("");
+  const [saveNewAddress, setSaveNewAddress] = useState(false);
 
   const [deliveryForm, setDeliveryForm] = useState({
     fullName: "",
@@ -55,6 +61,30 @@ const Checkout = () => {
     floor: "",
     deliveryNotes: "",
   });
+
+  // Update delivery form when saved address is selected
+  const handleAddressSelect = (addressId: string) => {
+    setSelectedAddressId(addressId);
+    const address = addresses.find((addr) => addr.id === addressId);
+    if (address) {
+      setDeliveryForm({
+        fullName: address.fullName,
+        phone: address.phoneNumber,
+        address: address.address,
+        building: address.building,
+        floor: address.floor,
+        deliveryNotes: deliveryForm.deliveryNotes, // Keep existing notes
+      });
+    }
+  };
+
+  // Effect to set initial address mode based on saved addresses
+  useEffect(() => {
+    if (addresses.length > 0 && addressMode === "new" && !selectedAddressId) {
+      setAddressMode("saved");
+      handleAddressSelect(addresses[0].id);
+    }
+  }, [addresses]);
 
   const [reservationForm, setReservationForm] = useState({
     fullName: "",
@@ -150,6 +180,31 @@ const Checkout = () => {
     // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 500));
 
+    // Save new address if requested
+    if (hasDelivery && saveNewAddress && addressMode === "new") {
+      const newAddress = {
+        nickname: "Home" as const,
+        fullName: deliveryForm.fullName,
+        address: deliveryForm.address,
+        building: deliveryForm.building,
+        floor: deliveryForm.floor,
+        phoneNumber: deliveryForm.phone,
+        additionalDetails: deliveryForm.deliveryNotes || "",
+      };
+      
+      const existingAddresses = JSON.parse(localStorage.getItem("pharmfind_addresses") || "[]");
+      existingAddresses.push({
+        ...newAddress,
+        id: Date.now().toString(),
+      });
+      localStorage.setItem("pharmfind_addresses", JSON.stringify(existingAddresses));
+      
+      toast({
+        title: "Address Saved",
+        description: "Your address has been saved for future orders.",
+      });
+    }
+
     const orderId = `ORD-${Date.now()}`;
     
     // Save order using OrdersContext
@@ -238,74 +293,155 @@ const Checkout = () => {
                   <CardDescription>Where should we deliver your order?</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="delivery-name">Full Name *</Label>
-                      <Input
-                        id="delivery-name"
-                        value={deliveryForm.fullName}
-                        onChange={(e) => setDeliveryForm({ ...deliveryForm, fullName: e.target.value })}
-                        placeholder="John Doe"
-                      />
-                      {errors.delivery_fullName && (
-                        <p className="text-sm text-destructive">{errors.delivery_fullName}</p>
-                      )}
+                  {/* Address Selection */}
+                  {addresses.length > 0 && (
+                    <div className="space-y-4 pb-4 border-b">
+                      <RadioGroup value={addressMode} onValueChange={(value: "saved" | "new") => {
+                        setAddressMode(value);
+                        if (value === "new") {
+                          setSelectedAddressId("");
+                          setDeliveryForm({
+                            fullName: "",
+                            phone: "",
+                            address: "",
+                            building: "",
+                            floor: "",
+                            deliveryNotes: "",
+                          });
+                        }
+                      }}>
+                        <div className="space-y-3">
+                          <div className="flex items-start space-x-2">
+                            <RadioGroupItem value="saved" id="saved-address" className="mt-1" />
+                            <div className="flex-1 space-y-2">
+                              <Label htmlFor="saved-address" className="cursor-pointer font-medium">
+                                Use saved address
+                              </Label>
+                              {addressMode === "saved" && (
+                                <Select value={selectedAddressId} onValueChange={handleAddressSelect}>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select an address" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {addresses.map((addr) => (
+                                      <SelectItem key={addr.id} value={addr.id}>
+                                        {addr.nickname} - {addr.building}, {addr.floor}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              )}
+                              {addressMode === "saved" && selectedAddressId && (
+                                <div className="p-3 bg-muted rounded-lg text-sm">
+                                  <p className="font-medium">{deliveryForm.fullName}</p>
+                                  <p className="text-muted-foreground">{deliveryForm.phone}</p>
+                                  <p className="text-muted-foreground">{deliveryForm.address}</p>
+                                  <p className="text-muted-foreground">
+                                    {deliveryForm.building}, {deliveryForm.floor}
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="new" id="new-address" />
+                            <Label htmlFor="new-address" className="cursor-pointer font-medium">
+                              Enter new address
+                            </Label>
+                          </div>
+                        </div>
+                      </RadioGroup>
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="delivery-phone">Phone Number *</Label>
-                      <Input
-                        id="delivery-phone"
-                        value={deliveryForm.phone}
-                        onChange={(e) => setDeliveryForm({ ...deliveryForm, phone: e.target.value })}
-                        placeholder="+961 1 234567"
-                      />
-                      {errors.delivery_phone && (
-                        <p className="text-sm text-destructive">{errors.delivery_phone}</p>
-                      )}
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="delivery-address">Street Address *</Label>
-                    <Input
-                      id="delivery-address"
-                      value={deliveryForm.address}
-                      onChange={(e) => setDeliveryForm({ ...deliveryForm, address: e.target.value })}
-                      placeholder="123 Main Street"
-                    />
-                    {errors.delivery_address && (
-                      <p className="text-sm text-destructive">{errors.delivery_address}</p>
-                    )}
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="delivery-building">Building Name/Number</Label>
-                      <Input
-                        id="delivery-building"
-                        value={deliveryForm.building}
-                        onChange={(e) => setDeliveryForm({ ...deliveryForm, building: e.target.value })}
-                        placeholder="Building A"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="delivery-floor">Floor</Label>
-                      <Input
-                        id="delivery-floor"
-                        value={deliveryForm.floor}
-                        onChange={(e) => setDeliveryForm({ ...deliveryForm, floor: e.target.value })}
-                        placeholder="3rd Floor"
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="delivery-notes">Delivery Notes</Label>
-                    <Textarea
-                      id="delivery-notes"
-                      value={deliveryForm.deliveryNotes}
-                      onChange={(e) => setDeliveryForm({ ...deliveryForm, deliveryNotes: e.target.value })}
-                      placeholder="Any special instructions for delivery..."
-                      rows={3}
-                    />
-                  </div>
+                  )}
+
+                  {/* Manual Address Input Fields */}
+                  {addressMode === "new" && (
+                    <>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="delivery-name">Full Name *</Label>
+                          <Input
+                            id="delivery-name"
+                            value={deliveryForm.fullName}
+                            onChange={(e) => setDeliveryForm({ ...deliveryForm, fullName: e.target.value })}
+                            placeholder="John Doe"
+                          />
+                          {errors.delivery_fullName && (
+                            <p className="text-sm text-destructive">{errors.delivery_fullName}</p>
+                          )}
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="delivery-phone">Phone Number *</Label>
+                          <Input
+                            id="delivery-phone"
+                            value={deliveryForm.phone}
+                            onChange={(e) => setDeliveryForm({ ...deliveryForm, phone: e.target.value })}
+                            placeholder="+961 1 234567"
+                          />
+                          {errors.delivery_phone && (
+                            <p className="text-sm text-destructive">{errors.delivery_phone}</p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="delivery-address">Street Address *</Label>
+                        <Input
+                          id="delivery-address"
+                          value={deliveryForm.address}
+                          onChange={(e) => setDeliveryForm({ ...deliveryForm, address: e.target.value })}
+                          placeholder="123 Main Street"
+                        />
+                        {errors.delivery_address && (
+                          <p className="text-sm text-destructive">{errors.delivery_address}</p>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="delivery-building">Building Name/Number</Label>
+                          <Input
+                            id="delivery-building"
+                            value={deliveryForm.building}
+                            onChange={(e) => setDeliveryForm({ ...deliveryForm, building: e.target.value })}
+                            placeholder="Building A"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="delivery-floor">Floor</Label>
+                          <Input
+                            id="delivery-floor"
+                            value={deliveryForm.floor}
+                            onChange={(e) => setDeliveryForm({ ...deliveryForm, floor: e.target.value })}
+                            placeholder="3rd Floor"
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="delivery-notes">Delivery Notes</Label>
+                        <Textarea
+                          id="delivery-notes"
+                          value={deliveryForm.deliveryNotes}
+                          onChange={(e) => setDeliveryForm({ ...deliveryForm, deliveryNotes: e.target.value })}
+                          placeholder="Any special instructions for delivery..."
+                          rows={3}
+                        />
+                      </div>
+
+                      {/* Save Address Checkbox */}
+                      <div className="flex items-center space-x-2 p-3 border rounded-lg">
+                        <input
+                          type="checkbox"
+                          id="save-address"
+                          checked={saveNewAddress}
+                          onChange={(e) => setSaveNewAddress(e.target.checked)}
+                          className="h-4 w-4 rounded border-gray-300"
+                        />
+                        <Label htmlFor="save-address" className="cursor-pointer font-normal">
+                          Save this address for future use
+                        </Label>
+                      </div>
+                    </>
+                  )}
                 </CardContent>
               </Card>
             )}
