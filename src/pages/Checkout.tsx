@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import Logo from "@/components/Logo";
 import { CartIcon } from "@/components/CartIcon";
 import { useCart } from "@/contexts/CartContext";
+import { useOrders } from "@/contexts/OrdersContext";
 import { toast } from "@/hooks/use-toast";
 import { z } from "zod";
 
@@ -43,6 +44,7 @@ const reservationSchema = z.object({
 const Checkout = () => {
   const navigate = useNavigate();
   const { cartItems, getItemsByPharmacy, clearCart } = useCart();
+  const { saveOrder } = useOrders();
   const itemsByPharmacy = getItemsByPharmacy();
 
   const [deliveryForm, setDeliveryForm] = useState({
@@ -150,7 +152,21 @@ const Checkout = () => {
 
     const orderId = `ORD-${Date.now()}`;
     
-    // Store order data for confirmation page
+    // Save order using OrdersContext
+    saveOrder({
+      orderId,
+      items: cartItems,
+      itemsByPharmacy,
+      deliveryForm: hasDelivery ? deliveryForm : null,
+      reservationForm: hasReservation ? reservationForm : null,
+      pickupTimes,
+      paymentMethod,
+      subtotal,
+      deliveryFees,
+      total,
+    });
+    
+    // Store order data for confirmation page (for backward compatibility)
     const orderData = {
       orderId,
       items: cartItems,
@@ -163,7 +179,6 @@ const Checkout = () => {
       deliveryFees,
       total,
     };
-    
     localStorage.setItem('current_order', JSON.stringify(orderData));
     
     clearCart();

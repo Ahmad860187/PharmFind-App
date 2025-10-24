@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Settings, Search, MapPin, Phone, Clock } from "lucide-react";
+import { Settings, Search, MapPin, Phone, Clock, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import Logo from "@/components/Logo";
 import { CartIcon } from "@/components/CartIcon";
+import { useOrders } from "@/contexts/OrdersContext";
 
 // Mock data for featured pharmacies (Real Beirut pharmacies)
 const mockPharmacies = [
@@ -77,6 +78,7 @@ const mockPopularMedicines = [
 const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
+  const { getUnreadOrdersCount } = useOrders();
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -93,6 +95,23 @@ const Index = () => {
           <div className="flex items-center justify-between">
             <Logo size="small" />
             <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate("/orders")}
+                className="relative"
+              >
+                <Package className="mr-2 h-4 w-4" />
+                My Orders
+                {getUnreadOrdersCount() > 0 && (
+                  <Badge
+                    variant="destructive"
+                    className="absolute -top-2 -right-2 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs"
+                  >
+                    {getUnreadOrdersCount()}
+                  </Badge>
+                )}
+              </Button>
               <CartIcon />
               <Link to="/user-settings">
                 <Button variant="outline" size="sm">
