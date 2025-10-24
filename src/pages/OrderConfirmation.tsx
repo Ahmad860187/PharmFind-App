@@ -48,10 +48,9 @@ const OrderConfirmation = () => {
   }
 
   const handleTrackOrder = () => {
-    toast({
-      title: "Feature coming soon",
-      description: "Order tracking will be available soon!",
-    });
+    if (orderId) {
+      navigate(`/orders/${orderId}`);
+    }
   };
 
   return (
