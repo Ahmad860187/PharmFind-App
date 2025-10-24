@@ -6,7 +6,9 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { CartProvider } from "@/contexts/CartContext";
 import { OrdersProvider } from "@/contexts/OrdersContext";
 import { AddressProvider } from "@/contexts/AddressContext";
+import { FavoritesProvider } from "@/contexts/FavoritesContext";
 import Index from "./pages/Index";
+import Favorites from "./pages/Favorites";
 import Auth from "./pages/Auth";
 import ForgotPassword from "./pages/ForgotPassword";
 import UserSettings from "./pages/UserSettings";
@@ -26,7 +28,8 @@ const App = () => (
     <CartProvider>
       <OrdersProvider>
         <AddressProvider>
-          <TooltipProvider>
+          <FavoritesProvider>
+            <TooltipProvider>
           <Toaster />
           <Sonner />
           <BrowserRouter>
@@ -42,11 +45,13 @@ const App = () => (
             <Route path="/order-confirmation" element={<OrderConfirmation />} />
             <Route path="/orders" element={<Orders />} />
             <Route path="/orders/:orderId" element={<OrderTracking />} />
+            <Route path="/favorites" element={<Favorites />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
-        </TooltipProvider>
+            </TooltipProvider>
+          </FavoritesProvider>
         </AddressProvider>
       </OrdersProvider>
     </CartProvider>

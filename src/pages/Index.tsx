@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Settings, Search, MapPin, Phone, Clock, Package } from "lucide-react";
+import { Settings, Search, MapPin, Phone, Clock, Package, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -111,6 +111,14 @@ const Index = () => {
                     {getUnreadOrdersCount()}
                   </Badge>
                 )}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate("/favorites")}
+              >
+                <Heart className="mr-2 h-4 w-4" />
+                Favorites
               </Button>
               <CartIcon />
               <Link to="/user-settings">

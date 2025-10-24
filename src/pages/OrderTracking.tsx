@@ -1,15 +1,18 @@
 import { useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, MapPin, Phone, Pill, CheckCircle, Clock } from "lucide-react";
+import { ArrowLeft, MapPin, Phone, Pill, CheckCircle, Clock, ShoppingCart, Plus, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import Logo from "@/components/Logo";
 import { CartIcon } from "@/components/CartIcon";
 import { useOrders, OrderStatus } from "@/contexts/OrdersContext";
+import { useCart } from "@/contexts/CartContext";
+import { useFavorites } from "@/contexts/FavoritesContext";
 import { OrderStatusBadge } from "@/components/OrderStatusBadge";
 import { format } from "date-fns";
 import { MockOrderControls } from "@/components/MockOrderControls";
+import { toast } from "@/hooks/use-toast";
 
 const pharmacyDetails: Record<string, any> = {
   "1": { id: 1, name: "Habib Pharmacy", address: "Hamra Street, Beirut", phone: "+961 1 340555" },
@@ -33,6 +36,8 @@ const OrderTracking = () => {
   const { orderId } = useParams<{ orderId: string }>();
   const navigate = useNavigate();
   const { getOrder, markOrderAsRead } = useOrders();
+  const { addToCart } = useCart();
+  const { addFavorite, isFavorite } = useFavorites();
 
   const order = orderId ? getOrder(orderId) : undefined;
 
@@ -51,6 +56,72 @@ const OrderTracking = () => {
   const hasDelivery = order.items.some((item) => item.type === 'delivery');
   const timeline = hasDelivery ? [...statusTimeline, ...deliveryStatuses] : statusTimeline;
   const currentStatusIndex = timeline.indexOf(order.status);
+
+  const handleReorderAll = () => {
+    let itemCount = 0;
+    order.items.forEach((item) => {
+      addToCart(
+        {
+          medicineId: item.medicineId,
+          medicineName: item.medicineName,
+          category: item.category,
+          pharmacyId: item.pharmacyId,
+          pharmacyName: item.pharmacyName,
+          price: item.price,
+          quantity: item.quantity,
+          type: item.type,
+          stockStatus: "In Stock",
+        },
+        item.quantity
+      );
+      itemCount += item.quantity;
+    });
+
+    toast({
+      title: "Items Added to Cart",
+      description: `${itemCount} items from order ${order.orderId} added to cart`,
+    });
+
+    navigate("/cart");
+  };
+
+  const handleReorderItem = (item: any) => {
+    addToCart(
+      {
+        medicineId: item.medicineId,
+        medicineName: item.medicineName,
+        category: item.category,
+        pharmacyId: item.pharmacyId,
+        pharmacyName: item.pharmacyName,
+        price: item.price,
+        quantity: item.quantity,
+        type: item.type,
+        stockStatus: "In Stock",
+      },
+      item.quantity
+    );
+
+    toast({
+      title: "Added to Cart",
+      description: `${item.medicineName} has been added to your cart`,
+    });
+  };
+
+  const handleAddToFavorites = (item: any) => {
+    addFavorite({
+      medicineId: item.medicineId,
+      medicineName: item.medicineName,
+      category: item.category,
+      lastPharmacyId: item.pharmacyId,
+      lastPharmacyName: item.pharmacyName,
+      lastPrice: item.price,
+    });
+
+    toast({
+      title: "Added to Favorites",
+      description: `${item.medicineName} has been added to your favorites`,
+    });
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -85,6 +156,24 @@ const OrderTracking = () => {
 
         {/* Mock Controls - Hidden in production */}
         <MockOrderControls orderId={order.orderId} />
+
+        {/* Quick Reorder Section */}
+        <Card className="border-primary/20 bg-primary/5 mb-6">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-semibold">Reorder this order</h3>
+                <p className="text-sm text-muted-foreground">
+                  Add all items to cart with same quantities
+                </p>
+              </div>
+              <Button onClick={handleReorderAll}>
+                <ShoppingCart className="mr-2 h-4 w-4" />
+                Order Again
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Status Timeline */}
         <Card className="mb-6">
@@ -163,19 +252,40 @@ const OrderTracking = () => {
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* Items */}
-                  <div className="space-y-2">
+                <div className="space-y-2">
                   {items.map((item) => (
-                    <div key={item.id} className="flex items-center justify-between py-2">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-muted rounded-lg flex items-center justify-center">
+                    <div key={item.id} className="flex items-center justify-between py-2 gap-2">
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <div className="w-10 h-10 bg-muted rounded-lg flex items-center justify-center flex-shrink-0">
                           <Pill className="h-5 w-5 text-muted-foreground" />
                         </div>
-                        <div>
-                          <p className="font-medium">{item.medicineName}</p>
-                          <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium truncate">{item.medicineName}</p>
+                          <p className="text-sm text-muted-foreground">
+                            Qty: {item.quantity} • ${(item.price * item.quantity).toFixed(2)}
+                          </p>
                         </div>
                       </div>
-                      <span className="font-semibold">${(item.price * item.quantity).toFixed(2)}</span>
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleReorderItem(item)}
+                        >
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => handleAddToFavorites(item)}
+                        >
+                          <Heart
+                            className={`h-4 w-4 ${
+                              isFavorite(item.medicineId) ? "fill-primary text-primary" : ""
+                            }`}
+                          />
+                        </Button>
+                      </div>
                     </div>
                   ))}
                 </div>

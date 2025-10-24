@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Search, Pill, MapPin, Phone, Clock, ChevronDown, ChevronUp, ArrowLeft } from "lucide-react";
+import { Search, Pill, MapPin, Phone, Clock, ChevronDown, ChevronUp, ArrowLeft, Heart } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,6 +8,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import Logo from "@/components/Logo";
 import { CartIcon } from "@/components/CartIcon";
+import { useFavorites } from "@/contexts/FavoritesContext";
+import { toast } from "@/hooks/use-toast";
 
 // Mock medicines data
 const mockMedicines = [
@@ -39,6 +41,7 @@ const SearchResults = () => {
   const query = searchParams.get("q") || "";
   const [searchQuery, setSearchQuery] = useState(query);
   const [expandedMedicine, setExpandedMedicine] = useState<number | null>(null);
+  const { addFavorite, removeFavorite, isFavorite } = useFavorites();
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,6 +60,32 @@ const SearchResults = () => {
   };
 
   const getPharmacyById = (id: number) => mockPharmacies.find(p => p.id === id);
+
+  const toggleFavorite = (medicine: any) => {
+    const pharmacy = getPharmacyById(medicine.pharmacies[0]);
+    if (!pharmacy) return;
+
+    if (isFavorite(medicine.id)) {
+      removeFavorite(medicine.id);
+      toast({
+        title: "Removed from Favorites",
+        description: `${medicine.name} has been removed from your favorites.`,
+      });
+    } else {
+      addFavorite({
+        medicineId: medicine.id,
+        medicineName: medicine.name,
+        category: medicine.category,
+        lastPharmacyId: pharmacy.id,
+        lastPharmacyName: pharmacy.name,
+        lastPrice: parseFloat(medicine.price.replace("$", "")),
+      });
+      toast({
+        title: "Added to Favorites",
+        description: `${medicine.name} has been added to your favorites.`,
+      });
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -132,7 +161,22 @@ const SearchResults = () => {
             <TabsContent value="medicines" className="mt-6">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {mockMedicines.map((medicine) => (
-                  <Card key={medicine.id} className="cursor-pointer hover:shadow-lg transition-shadow">
+                  <Card key={medicine.id} className="cursor-pointer hover:shadow-lg transition-shadow relative">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute top-2 right-2 z-10"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleFavorite(medicine);
+                      }}
+                    >
+                      <Heart
+                        className={`h-5 w-5 ${
+                          isFavorite(medicine.id) ? "fill-primary text-primary" : ""
+                        }`}
+                      />
+                    </Button>
                     <CardHeader>
                       <div className="flex items-start gap-4">
                         <div className="h-16 w-16 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">

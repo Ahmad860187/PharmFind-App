@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { CartIcon } from "@/components/CartIcon";
 import { useCart } from "@/contexts/CartContext";
+import { useFavorites } from "@/contexts/FavoritesContext";
 import Logo from "@/components/Logo";
 import {
   ArrowLeft,
@@ -23,6 +24,7 @@ import {
   CheckCircle,
   Plus,
   Minus,
+  Heart,
 } from "lucide-react";
 
 // Mock pharmacy data
@@ -225,6 +227,7 @@ const PharmacyStore = () => {
   const navigate = useNavigate();
   const searchQuery = searchParams.get("search") || "";
   const { addToCart } = useCart();
+  const { addFavorite, removeFavorite, isFavorite } = useFavorites();
   
   const [medicineSearch, setMedicineSearch] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -301,6 +304,29 @@ const PharmacyStore = () => {
     });
 
     setDialogOpen(false);
+  };
+
+  const toggleFavorite = (medicine: any) => {
+    if (isFavorite(medicine.id)) {
+      removeFavorite(medicine.id);
+      toast({
+        title: "Removed from Favorites",
+        description: `${medicine.name} has been removed from your favorites.`,
+      });
+    } else {
+      addFavorite({
+        medicineId: medicine.id,
+        medicineName: medicine.name,
+        category: medicine.category,
+        lastPharmacyId: Number(id),
+        lastPharmacyName: pharmacy.name,
+        lastPrice: Number(medicine.price),
+      });
+      toast({
+        title: "Added to Favorites",
+        description: `${medicine.name} has been added to your favorites.`,
+      });
+    }
   };
 
   if (!pharmacy) {
@@ -422,10 +448,25 @@ const PharmacyStore = () => {
                   ref={isHighlighted ? highlightRef : null}
                   className={
                     isHighlighted
-                      ? "animate-pulse border-primary shadow-lg"
-                      : ""
+                      ? "animate-pulse border-primary shadow-lg relative"
+                      : "relative"
                   }
                 >
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute top-2 right-2 z-10"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleFavorite(medicine);
+                    }}
+                  >
+                    <Heart
+                      className={`h-5 w-5 ${
+                        isFavorite(medicine.id) ? "fill-primary text-primary" : ""
+                      }`}
+                    />
+                  </Button>
                   <CardHeader className="pb-3">
                     <div className="flex items-start gap-3">
                       <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
