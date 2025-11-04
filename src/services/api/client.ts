@@ -55,10 +55,11 @@ class ApiClient {
       clearTimeout(timeoutId);
 
       if (!response.ok) {
-        const error: ApiError = await response.json().catch(() => ({
-          message: 'An error occurred',
+        const errorData = await response.json().catch(() => null);
+        const error: ApiError = errorData?.error || {
+          message: errorData?.message || 'An error occurred',
           status: response.status,
-        }));
+        };
         throw error;
       }
 

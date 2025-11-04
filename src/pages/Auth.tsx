@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,24 +8,81 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Pill, Heart, ShieldCheck } from "lucide-react";
 import { Link } from "react-router-dom";
+import { toast } from "sonner";
 import Logo from "@/components/Logo";
+import { AuthService } from "@/services/auth.service";
 
 const Auth = () => {
+  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [loginMethod, setLoginMethod] = useState<'email' | 'phone'>('email');
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSignUp = async (e: React.FormEvent) => {
+  const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
-    // Authentication logic will be implemented later
-    setTimeout(() => setIsLoading(false), 1000);
+    setError(null);
+
+    const form = e.currentTarget;
+    const formData = new FormData(form);
+    
+    const firstName = formData.get('signup-firstname') as string;
+    const lastName = formData.get('signup-lastname') as string;
+    const email = formData.get('signup-email') as string;
+    const phone = formData.get('signup-phone') as string;
+    const password = formData.get('signup-password') as string;
+
+    try {
+      const response = await AuthService.register({
+        email,
+        password,
+        fullName: `${firstName} ${lastName}`,
+        phone,
+      });
+      
+      if ((response as any).message) {
+        toast.success((response as any).message);
+      } else {
+        toast.success("Account created successfully! Please check your email to verify your account.");
+      }
+      navigate("/dashboard");
+    } catch (error: any) {
+      const errorMessage = error?.error?.message || error?.message || "Failed to create account";
+      setError(errorMessage);
+      toast.error(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
-    // Authentication logic will be implemented later
-    setTimeout(() => setIsLoading(false), 1000);
+    setError(null);
+
+    const form = e.currentTarget;
+    const formData = new FormData(form);
+    
+    const email = loginMethod === 'email' ? formData.get('login-email') as string : undefined;
+    const phone = loginMethod === 'phone' ? formData.get('login-phone') as string : undefined;
+    const password = formData.get('login-password') as string;
+
+    try {
+      await AuthService.login({
+        email,
+        phone,
+        password,
+      });
+      
+      toast.success("Logged in successfully!");
+      navigate("/dashboard");
+    } catch (error: any) {
+      const errorMessage = error?.error?.message || error?.message || "Invalid credentials";
+      setError(errorMessage);
+      toast.error(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -101,6 +159,11 @@ const Auth = () => {
                 </CardHeader>
                 <CardContent>
                   <form onSubmit={handleLogin} className="space-y-4">
+                    {error && (
+                      <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded">
+                        {error}
+                      </div>
+                    )}
                     <div className="space-y-2">
                       <Label>Login with</Label>
                       <div className="flex gap-2">
@@ -129,6 +192,7 @@ const Auth = () => {
                         <Label htmlFor="login-email">Email</Label>
                         <Input
                           id="login-email"
+                          name="login-email"
                           type="email"
                           placeholder="you@example.com"
                           required
@@ -139,6 +203,7 @@ const Auth = () => {
                         <Label htmlFor="login-phone">Phone Number</Label>
                         <Input
                           id="login-phone"
+                          name="login-phone"
                           type="tel"
                           placeholder="+961 70 123 456"
                           required
@@ -149,6 +214,7 @@ const Auth = () => {
                       <Label htmlFor="login-password">Password</Label>
                       <Input
                         id="login-password"
+                        name="login-password"
                         type="password"
                         placeholder="••••••••"
                         required
@@ -184,11 +250,17 @@ const Auth = () => {
                 </CardHeader>
                 <CardContent>
                   <form onSubmit={handleSignUp} className="space-y-4">
+                    {error && (
+                      <div className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded">
+                        {error}
+                      </div>
+                    )}
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <Label htmlFor="signup-firstname">First Name</Label>
                         <Input
                           id="signup-firstname"
+                          name="signup-firstname"
                           type="text"
                           placeholder="John"
                           required
@@ -198,6 +270,7 @@ const Auth = () => {
                         <Label htmlFor="signup-lastname">Last Name</Label>
                         <Input
                           id="signup-lastname"
+                          name="signup-lastname"
                           type="text"
                           placeholder="Doe"
                           required
@@ -208,6 +281,7 @@ const Auth = () => {
                       <Label htmlFor="signup-email">Email</Label>
                       <Input
                         id="signup-email"
+                        name="signup-email"
                         type="email"
                         placeholder="you@example.com"
                         required
@@ -217,6 +291,7 @@ const Auth = () => {
                       <Label htmlFor="signup-phone">Phone Number</Label>
                       <Input
                         id="signup-phone"
+                        name="signup-phone"
                         type="tel"
                         placeholder="+961 70 123 456"
                         required
@@ -226,6 +301,7 @@ const Auth = () => {
                       <Label htmlFor="signup-password">Password</Label>
                       <Input
                         id="signup-password"
+                        name="signup-password"
                         type="password"
                         placeholder="••••••••"
                         required

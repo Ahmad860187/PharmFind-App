@@ -20,6 +20,7 @@ import OrderConfirmation from "./pages/OrderConfirmation";
 import Orders from "./pages/Orders";
 import OrderTracking from "./pages/OrderTracking";
 import NotFound from "./pages/NotFound";
+import VerifyEmail from "./pages/VerifyEmail";
 
 const queryClient = new QueryClient();
 
@@ -36,6 +37,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Auth />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/verify-email" element={<VerifyEmail />} />
             <Route path="/dashboard" element={<Index />} />
             <Route path="/user-settings" element={<UserSettings />} />
             <Route path="/search" element={<SearchResults />} />
