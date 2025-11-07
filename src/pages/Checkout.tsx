@@ -97,6 +97,10 @@ const Checkout = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // Delivery scheduling
+  const [deliveryScheduleMode, setDeliveryScheduleMode] = useState<'now' | 'scheduled'>('now');
+  const [scheduledDeliveryAt, setScheduledDeliveryAt] = useState<string>("");
+
   const hasDelivery = cartItems.some((item) => item.type === 'delivery');
   const hasReservation = cartItems.some((item) => item.type === 'reservation');
 
@@ -154,6 +158,19 @@ const Checkout = () => {
           newErrors[`pickup_${pharmacyId}`] = "Please select a pickup time";
         }
       });
+    }
+
+    // Validate delivery schedule
+    if (hasDelivery && deliveryScheduleMode === 'scheduled') {
+      if (!scheduledDeliveryAt) {
+        newErrors.delivery_scheduledAt = "Please select a delivery date & time";
+      } else {
+        const selected = new Date(scheduledDeliveryAt).getTime();
+        const now = Date.now();
+        if (isNaN(selected) || selected <= now) {
+          newErrors.delivery_scheduledAt = "Scheduled time must be in the future";
+        }
+      }
     }
 
     // Validate payment method
@@ -215,6 +232,12 @@ const Checkout = () => {
       deliveryForm: hasDelivery ? deliveryForm : null,
       reservationForm: hasReservation ? reservationForm : null,
       pickupTimes,
+      deliverySchedule: hasDelivery
+        ? {
+            mode: deliveryScheduleMode,
+            scheduledAt: deliveryScheduleMode === 'scheduled' ? new Date(scheduledDeliveryAt).toISOString() : undefined,
+          }
+        : undefined,
       paymentMethod,
       subtotal,
       deliveryFees,
@@ -229,6 +252,12 @@ const Checkout = () => {
       deliveryForm: hasDelivery ? deliveryForm : null,
       reservationForm: hasReservation ? reservationForm : null,
       pickupTimes,
+      deliverySchedule: hasDelivery
+        ? {
+            mode: deliveryScheduleMode,
+            scheduledAt: deliveryScheduleMode === 'scheduled' ? new Date(scheduledDeliveryAt).toISOString() : undefined,
+          }
+        : undefined,
       paymentMethod,
       subtotal,
       deliveryFees,
@@ -442,6 +471,50 @@ const Checkout = () => {
                       </div>
                     </>
                   )}
+
+                  {/* Delivery Timing */}
+                  <div className="mt-4 pt-4 border-t space-y-3">
+                    <Label>Delivery Time</Label>
+                    <RadioGroup value={deliveryScheduleMode} onValueChange={(v: 'now' | 'scheduled') => setDeliveryScheduleMode(v)}>
+                      <div className="flex items-center space-x-2 p-3 border rounded-lg">
+                        <input
+                          type="radio"
+                          id="deliver-now"
+                          checked={deliveryScheduleMode === 'now'}
+                          onChange={() => setDeliveryScheduleMode('now')}
+                        />
+                        <Label htmlFor="deliver-now" className="cursor-pointer font-normal flex-1">Deliver now</Label>
+                      </div>
+                      <div className="space-y-2 p-3 border rounded-lg">
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="radio"
+                            id="deliver-scheduled"
+                            checked={deliveryScheduleMode === 'scheduled'}
+                            onChange={() => setDeliveryScheduleMode('scheduled')}
+                          />
+                          <Label htmlFor="deliver-scheduled" className="cursor-pointer font-normal flex-1">Schedule for later</Label>
+                        </div>
+                        {deliveryScheduleMode === 'scheduled' && (
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="scheduled-at">Delivery date & time *</Label>
+                              <Input
+                                id="scheduled-at"
+                                type="datetime-local"
+                                value={scheduledDeliveryAt}
+                                onChange={(e) => setScheduledDeliveryAt(e.target.value)}
+                                min={new Date().toISOString().slice(0,16)}
+                              />
+                              {errors.delivery_scheduledAt && (
+                                <p className="text-sm text-destructive">{errors.delivery_scheduledAt}</p>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </RadioGroup>
+                  </div>
                 </CardContent>
               </Card>
             )}
