@@ -12,6 +12,10 @@ export interface Order {
   deliveryForm: any | null;
   reservationForm: any | null;
   pickupTimes: Record<number, string>;
+  deliverySchedule?: {
+    mode: 'now' | 'scheduled';
+    scheduledAt?: string; // ISO string when mode is 'scheduled'
+  };
   paymentMethod: string;
   subtotal: number;
   deliveryFees: number;
