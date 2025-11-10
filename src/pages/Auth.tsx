@@ -11,12 +11,16 @@ import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import Logo from "@/components/Logo";
 import { AuthService } from "@/services/auth.service";
+import { useRole, UserRole } from "@/contexts/RoleContext";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 const Auth = () => {
+  const { setRole } = useRole();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [loginMethod, setLoginMethod] = useState<'email' | 'phone'>('email');
   const [error, setError] = useState<string | null>(null);
+  const [selectedRole, setSelectedRole] = useState<UserRole>('patient');
 
   const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -45,7 +49,10 @@ const Auth = () => {
       } else {
         toast.success("Account created successfully! Please check your email to verify your account.");
       }
-      navigate("/dashboard");
+      
+      setRole(selectedRole);
+      const redirectPath = selectedRole === 'pharmacist' ? '/pharmacist/dashboard' : '/dashboard';
+      navigate(redirectPath);
     } catch (error: any) {
       const errorMessage = error?.error?.message || error?.message || "Failed to create account";
       setError(errorMessage);
@@ -74,8 +81,10 @@ const Auth = () => {
         password,
       });
       
+      setRole(selectedRole);
       toast.success("Logged in successfully!");
-      navigate("/dashboard");
+      const redirectPath = selectedRole === 'pharmacist' ? '/pharmacist/dashboard' : '/dashboard';
+      navigate(redirectPath);
     } catch (error: any) {
       const errorMessage = error?.error?.message || error?.message || "Invalid credentials";
       setError(errorMessage);
@@ -164,6 +173,19 @@ const Auth = () => {
                         {error}
                       </div>
                     )}
+                    <div className="space-y-2">
+                      <Label>I am a</Label>
+                      <RadioGroup value={selectedRole} onValueChange={(value) => setSelectedRole(value as UserRole)}>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="patient" id="login-patient" />
+                          <Label htmlFor="login-patient" className="font-normal cursor-pointer">Patient</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="pharmacist" id="login-pharmacist" />
+                          <Label htmlFor="login-pharmacist" className="font-normal cursor-pointer">Pharmacist</Label>
+                        </div>
+                      </RadioGroup>
+                    </div>
                     <div className="space-y-2">
                       <Label>Login with</Label>
                       <div className="flex gap-2">
@@ -296,6 +318,19 @@ const Auth = () => {
                         placeholder="+961 70 123 456"
                         required
                       />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>I am a</Label>
+                      <RadioGroup value={selectedRole} onValueChange={(value) => setSelectedRole(value as UserRole)}>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="patient" id="signup-patient" />
+                          <Label htmlFor="signup-patient" className="font-normal cursor-pointer">Patient</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="pharmacist" id="signup-pharmacist" />
+                          <Label htmlFor="signup-pharmacist" className="font-normal cursor-pointer">Pharmacist</Label>
+                        </div>
+                      </RadioGroup>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="signup-password">Password</Label>

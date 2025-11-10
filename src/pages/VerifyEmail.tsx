@@ -7,6 +7,11 @@ import { apiClient } from "@/services/api/client";
 import { toast } from "sonner";
 import Logo from "@/components/Logo";
 
+interface VerifyEmailResponse {
+  message?: string;
+  success?: boolean;
+}
+
 const VerifyEmail = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -25,7 +30,7 @@ const VerifyEmail = () => {
     // Verify email with backend
     const verifyEmail = async () => {
       try {
-        const response = await apiClient.get(`/auth/verify-email?token=${token}`);
+        const response = await apiClient.get<VerifyEmailResponse>(`/auth/verify-email?token=${token}`);
         setStatus('success');
         setMessage(response.message || 'Email verified successfully!');
         toast.success('Email verified successfully!');

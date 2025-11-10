@@ -7,6 +7,7 @@ import { CartProvider } from "@/contexts/CartContext";
 import { OrdersProvider } from "@/contexts/OrdersContext";
 import { AddressProvider } from "@/contexts/AddressContext";
 import { FavoritesProvider } from "@/contexts/FavoritesContext";
+import { RoleProvider } from "@/contexts/RoleContext";
 import Index from "./pages/Index";
 import Favorites from "./pages/Favorites";
 import Auth from "./pages/Auth";
@@ -21,16 +22,22 @@ import Orders from "./pages/Orders";
 import OrderTracking from "./pages/OrderTracking";
 import NotFound from "./pages/NotFound";
 import VerifyEmail from "./pages/VerifyEmail";
+import PharmacistDashboard from "./pages/pharmacist/Dashboard";
+import OrdersQueue from "./pages/pharmacist/OrdersQueue";
+import OrderReview from "./pages/pharmacist/OrderReview";
+import InventoryManagement from "./pages/pharmacist/InventoryManagement";
+import PharmacistProfile from "./pages/pharmacist/Profile";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <CartProvider>
-      <OrdersProvider>
-        <AddressProvider>
-          <FavoritesProvider>
-            <TooltipProvider>
+    <RoleProvider>
+      <CartProvider>
+        <OrdersProvider>
+          <AddressProvider>
+            <FavoritesProvider>
+              <TooltipProvider>
           <Toaster />
           <Sonner />
           <BrowserRouter>
@@ -48,15 +55,22 @@ const App = () => (
             <Route path="/orders" element={<Orders />} />
             <Route path="/orders/:orderId" element={<OrderTracking />} />
             <Route path="/favorites" element={<Favorites />} />
+            {/* Pharmacist Routes */}
+            <Route path="/pharmacist/dashboard" element={<PharmacistDashboard />} />
+            <Route path="/pharmacist/orders" element={<OrdersQueue />} />
+            <Route path="/pharmacist/orders/:orderId" element={<OrderReview />} />
+            <Route path="/pharmacist/inventory" element={<InventoryManagement />} />
+            <Route path="/pharmacist/profile" element={<PharmacistProfile />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
-            </TooltipProvider>
-          </FavoritesProvider>
-        </AddressProvider>
-      </OrdersProvider>
-    </CartProvider>
+              </TooltipProvider>
+            </FavoritesProvider>
+          </AddressProvider>
+        </OrdersProvider>
+      </CartProvider>
+    </RoleProvider>
   </QueryClientProvider>
 );
 
