@@ -34,6 +34,7 @@ export interface Order {
   phoneNumber?: string;
   paymentMethod: string;
   statusHistory: OrderStatusHistoryEntry[];
+  prescriptionId?: string;
 }
 
 export interface CreateOrderData {
@@ -45,4 +46,5 @@ export interface CreateOrderData {
   deliveryAddress?: string;
   phoneNumber?: string;
   paymentMethod: string;
+  prescriptionId?: string;
 }

@@ -20,6 +20,7 @@ export interface Order {
   subtotal: number;
   deliveryFees: number;
   total: number;
+  prescriptionId?: string;
   statusHistory: Array<{
     status: OrderStatus;
     timestamp: string;

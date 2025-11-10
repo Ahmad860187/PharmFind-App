@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Truck, Package, CheckCircle, MapPin, Phone, Pill } from "lucide-react";
+import { ArrowLeft, Truck, Package, CheckCircle, MapPin, Phone, Pill, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,9 @@ import { useOrders } from "@/contexts/OrdersContext";
 import { useAddresses } from "@/contexts/AddressContext";
 import { toast } from "@/hooks/use-toast";
 import { z } from "zod";
+import PrescriptionUpload from "@/components/checkout/PrescriptionUpload";
+import { PrescriptionsService } from "@/services/prescriptions.service";
+import { mockMedicines } from "@/data/mock/medicines.mock";
 
 const pharmacyDetails: Record<string, any> = {
   "1": { id: 1, name: "Habib Pharmacy", address: "Hamra Street, Beirut", phone: "+961 1 340555" },
@@ -101,8 +104,17 @@ const Checkout = () => {
   const [deliveryScheduleMode, setDeliveryScheduleMode] = useState<'now' | 'scheduled'>('now');
   const [scheduledDeliveryAt, setScheduledDeliveryAt] = useState<string>("");
 
+  // Prescription upload
+  const [prescriptionFile, setPrescriptionFile] = useState<{ file: File; preview: string } | null>(null);
+  
   const hasDelivery = cartItems.some((item) => item.type === 'delivery');
   const hasReservation = cartItems.some((item) => item.type === 'reservation');
+  
+  // Check if any item requires prescription
+  const requiresPrescription = cartItems.some((item) => {
+    const medicine = mockMedicines.find(m => m.id === item.medicineId);
+    return medicine?.requiresPrescription;
+  });
 
   const reservationPharmacies = Object.entries(itemsByPharmacy).filter(([, items]) =>
     items.some((item) => item.type === 'reservation')
@@ -173,6 +185,11 @@ const Checkout = () => {
       }
     }
 
+    // Validate prescription upload
+    if (requiresPrescription && !prescriptionFile) {
+      newErrors.prescription = "Please upload a valid prescription for prescription-required medicines";
+    }
+
     // Validate payment method
     if (!paymentMethod) {
       newErrors.paymentMethod = "Please select a payment method";
@@ -193,6 +210,23 @@ const Checkout = () => {
     }
 
     setIsSubmitting(true);
+
+    // Upload prescription if required
+    let prescriptionId: string | undefined;
+    if (requiresPrescription && prescriptionFile) {
+      try {
+        const prescription = await PrescriptionsService.uploadPrescription(prescriptionFile);
+        prescriptionId = prescription.id;
+      } catch (error) {
+        toast({
+          title: "Upload Failed",
+          description: "Failed to upload prescription. Please try again.",
+          variant: "destructive",
+        });
+        setIsSubmitting(false);
+        return;
+      }
+    }
 
     // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 500));
@@ -242,6 +276,7 @@ const Checkout = () => {
       subtotal,
       deliveryFees,
       total,
+      prescriptionId,
     });
     
     // Store order data for confirmation page (for backward compatibility)
@@ -262,6 +297,7 @@ const Checkout = () => {
       subtotal,
       deliveryFees,
       total,
+      prescriptionId,
     };
     localStorage.setItem('current_order', JSON.stringify(orderData));
     
@@ -601,6 +637,29 @@ const Checkout = () => {
                       rows={3}
                     />
                   </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Prescription Upload */}
+            {requiresPrescription && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <FileText className="h-5 w-5" />
+                    Prescription Upload
+                  </CardTitle>
+                  <CardDescription>
+                    Your order contains prescription-required medicines
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <PrescriptionUpload
+                    selectedFile={prescriptionFile}
+                    onFileSelect={(file, preview) => setPrescriptionFile({ file, preview })}
+                    onFileRemove={() => setPrescriptionFile(null)}
+                    error={errors.prescription}
+                  />
                 </CardContent>
               </Card>
             )}
