@@ -122,3 +122,23 @@ export const mockInventory: InventoryItem[] = [
     lastUpdated: new Date().toISOString(),
   }
 ];
+
+export const updateOrderStatus = (
+  orderId: string, 
+  status: PharmacistOrder['status'],
+  note?: string
+): PharmacistOrder | undefined => {
+  const orders = [...mockPharmacistOrders];
+  const orderIndex = orders.findIndex(o => o.id === orderId);
+  
+  if (orderIndex !== -1) {
+    orders[orderIndex].status = status;
+    orders[orderIndex].updatedAt = new Date().toISOString();
+    if (note) {
+      orders[orderIndex].notes = note;
+    }
+    return orders[orderIndex];
+  }
+  
+  return undefined;
+};

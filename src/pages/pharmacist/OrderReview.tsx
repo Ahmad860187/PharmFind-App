@@ -1,21 +1,32 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { ArrowLeft, CheckCircle, XCircle, FileText, Phone, MapPin, Clock } from 'lucide-react';
+import { ArrowLeft, CheckCircle, XCircle, FileText, Phone, MapPin, Clock, Eye } from 'lucide-react';
 import PharmacistLayout from '@/components/pharmacist/PharmacistLayout';
+import { PrescriptionViewer } from '@/components/pharmacist/PrescriptionViewer';
+import { OrderActionDialog } from '@/components/pharmacist/OrderActionDialog';
+import { PharmacistOrdersService } from '@/services/pharmacist-orders.service';
 import { mockPharmacistOrders } from '@/data/mock/pharmacist.mock';
+import { PharmacistOrder } from '@/types/pharmacist.types';
 import { toast } from 'sonner';
 
 const OrderReview = () => {
   const { orderId } = useParams();
   const navigate = useNavigate();
-  const [rejectionReason, setRejectionReason] = useState('');
+  const [order, setOrder] = useState<PharmacistOrder | null>(null);
+  const [showPrescription, setShowPrescription] = useState(false);
+  const [actionDialog, setActionDialog] = useState<{ open: boolean; action: 'accept' | 'reject' }>({
+    open: false,
+    action: 'accept',
+  });
 
-  const order = mockPharmacistOrders.find(o => o.id === orderId);
+  useEffect(() => {
+    PharmacistOrdersService.initializeFromMock(mockPharmacistOrders);
+    const foundOrder = mockPharmacistOrders.find(o => o.id === orderId);
+    setOrder(foundOrder || null);
+  }, [orderId]);
 
   if (!order) {
     return (
@@ -34,18 +45,21 @@ const OrderReview = () => {
     );
   }
 
-  const handleAccept = () => {
-    toast.success('Order accepted successfully');
-    navigate('/pharmacist/orders');
-  };
+  const handleConfirmAction = async (reason?: string) => {
+    if (!orderId) return;
 
-  const handleReject = () => {
-    if (!rejectionReason.trim()) {
-      toast.error('Please provide a reason for rejection');
-      return;
+    try {
+      if (actionDialog.action === 'accept') {
+        await PharmacistOrdersService.acceptOrder(orderId);
+        toast.success('Order accepted successfully');
+      } else {
+        await PharmacistOrdersService.rejectOrder(orderId, reason!);
+        toast.success('Order rejected');
+      }
+      navigate('/pharmacist/orders');
+    } catch (error) {
+      toast.error('Failed to update order');
     }
-    toast.success('Order rejected');
-    navigate('/pharmacist/orders');
   };
 
   return (
@@ -150,7 +164,10 @@ const OrderReview = () => {
             <CardContent>
               {order.prescriptionUrl ? (
                 <div className="space-y-4">
-                  <div className="border rounded-lg overflow-hidden">
+                  <div 
+                    className="border rounded-lg overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
+                    onClick={() => setShowPrescription(true)}
+                  >
                     <img
                       src={order.prescriptionUrl}
                       alt="Prescription"
@@ -160,9 +177,19 @@ const OrderReview = () => {
                       }}
                     />
                   </div>
-                  <p className="text-sm text-muted-foreground">
-                    Please verify the prescription is valid and matches the ordered items
-                  </p>
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm text-muted-foreground">
+                      Click image to view in full screen
+                    </p>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setShowPrescription(true)}
+                    >
+                      <Eye className="mr-2 h-4 w-4" />
+                      View Full Screen
+                    </Button>
+                  </div>
                 </div>
               ) : (
                 <p className="text-sm text-muted-foreground">No prescription uploaded</p>
@@ -177,12 +204,12 @@ const OrderReview = () => {
             <CardHeader>
               <CardTitle>Order Actions</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent>
               <div className="grid gap-4 md:grid-cols-2">
                 <Button
                   size="lg"
                   className="w-full"
-                  onClick={handleAccept}
+                  onClick={() => setActionDialog({ open: true, action: 'accept' })}
                 >
                   <CheckCircle className="mr-2 h-5 w-5" />
                   Accept Order
@@ -191,22 +218,11 @@ const OrderReview = () => {
                   size="lg"
                   variant="destructive"
                   className="w-full"
-                  onClick={handleReject}
+                  onClick={() => setActionDialog({ open: true, action: 'reject' })}
                 >
                   <XCircle className="mr-2 h-5 w-5" />
                   Reject Order
                 </Button>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="rejection-reason">Rejection Reason (if applicable)</Label>
-                <Textarea
-                  id="rejection-reason"
-                  placeholder="Provide a reason for rejecting this order..."
-                  value={rejectionReason}
-                  onChange={(e) => setRejectionReason(e.target.value)}
-                  rows={3}
-                />
               </div>
             </CardContent>
           </Card>
@@ -218,6 +234,21 @@ const OrderReview = () => {
           </Card>
         )}
       </div>
+
+      <PrescriptionViewer
+        isOpen={showPrescription}
+        onClose={() => setShowPrescription(false)}
+        imageUrl={order.prescriptionUrl || ''}
+        fileName={order.orderNumber}
+      />
+
+      <OrderActionDialog
+        isOpen={actionDialog.open}
+        onClose={() => setActionDialog({ ...actionDialog, open: false })}
+        action={actionDialog.action}
+        onConfirm={handleConfirmAction}
+        orderNumber={order.orderNumber}
+      />
     </PharmacistLayout>
   );
 };
