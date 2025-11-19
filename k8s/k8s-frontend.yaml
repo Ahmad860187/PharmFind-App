@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: frontend-deployment-v2   # <--- NEW NAME
+  name: frontend-deployment-v2   
 spec:
   replicas: 1
   selector:
@@ -30,4 +30,4 @@ spec:
   ports:
     - port: 80
       targetPort: 80
-      nodePort: 30083  # pick a free NodePort (30000–32767)
+      nodePort: 30083 
