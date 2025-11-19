@@ -492,7 +492,11 @@ app.get('/api/medicines/categories', (req, res) => {
 app.get('/api/pharmacies', (req, res) => {
   try {
     const pharmacies = Database.getAllPharmacies();
-    res.json({ data: pharmacies });
+    // Only return verified pharmacies for public listing
+    // (unverified pharmacies should only be visible to their owners)
+    // Default to verified: true for existing pharmacies without the field (backward compatibility)
+    const verifiedPharmacies = pharmacies.filter(p => p.verified !== false);
+    res.json({ data: verifiedPharmacies });
   } catch (error) {
     console.error('Pharmacies error:', error);
     res.status(500).json({
@@ -541,10 +545,153 @@ app.get('/api/medicines/:medicineId/pharmacies', (req, res) => {
       .filter(inv => inv.medicineId === medicineId)
       .map(inv => inv.pharmacyId);
 
-    const result = pharmacies.filter(p => pharmacyIds.includes(p.id));
+    // Only return verified pharmacies (default to verified for backward compatibility)
+    const result = pharmacies.filter(p => 
+      pharmacyIds.includes(p.id) && p.verified !== false
+    );
     res.json(result);
   } catch (error) {
     console.error('Medicine pharmacies error:', error);
+    res.status(500).json({
+      error: { message: 'Internal server error', status: 500 }
+    });
+  }
+});
+
+// Pharmacy registration endpoint
+app.post('/api/pharmacies/register', authenticateToken, (req, res) => {
+  try {
+    const userId = getCurrentUserId(req);
+    const { name, address, phone, latitude, longitude, hours, baseDeliveryFee, licenseNumber } = req.body;
+
+    if (!name || !address || !phone) {
+      return res.status(400).json({
+        error: { message: 'Name, address, and phone are required', status: 400 }
+      });
+    }
+
+    // Check if user already has a pharmacy
+    const existingPharmacy = Database.findPharmacyByOwnerId(userId);
+    if (existingPharmacy) {
+      return res.status(409).json({
+        error: { message: 'You already have a registered pharmacy', status: 409 }
+      });
+    }
+
+    // Create pharmacy (auto-verified since there's no admin dashboard)
+    const pharmacy = Database.createPharmacy({
+      name,
+      address,
+      phone,
+      latitude: latitude || null,
+      longitude: longitude || null,
+      hours: hours || { open: "08:00", close: "22:00" },
+      baseDeliveryFee: baseDeliveryFee || 15.00,
+      deliveryFee: baseDeliveryFee || 15.00,
+      licenseNumber: licenseNumber || null,
+      ownerUserId: userId,
+      rating: 0,
+      isOpen: true,
+      distance: "0 km",
+      deliveryTime: "20-30 min",
+    });
+
+    // Auto-verify the pharmacy (no admin dashboard)
+    const verifiedPharmacy = Database.verifyPharmacy(pharmacy.id, true);
+
+    res.status(201).json({
+      ...verifiedPharmacy,
+      message: 'Pharmacy registered and verified successfully! You can now receive orders.',
+    });
+  } catch (error) {
+    console.error('Pharmacy registration error:', error);
+    res.status(500).json({
+      error: { message: 'Internal server error', status: 500 }
+    });
+  }
+});
+
+// Get pharmacy by owner (for pharmacist dashboard)
+app.get('/api/pharmacies/me', authenticateToken, (req, res) => {
+  try {
+    const userId = getCurrentUserId(req);
+    const pharmacy = Database.findPharmacyByOwnerId(userId);
+    
+    if (!pharmacy) {
+      return res.status(404).json({
+        error: { message: 'No pharmacy found for this user', status: 404 }
+      });
+    }
+
+    res.json(pharmacy);
+  } catch (error) {
+    console.error('Get pharmacy error:', error);
+    res.status(500).json({
+      error: { message: 'Internal server error', status: 500 }
+    });
+  }
+});
+
+// Get pharmacy verification status
+app.get('/api/pharmacies/:id/verification-status', authenticateToken, (req, res) => {
+  try {
+    const pharmacy = Database.findPharmacyById(parseInt(req.params.id));
+    if (!pharmacy) {
+      return res.status(404).json({
+        error: { message: 'Pharmacy not found', status: 404 }
+      });
+    }
+
+    // Check if user owns this pharmacy
+    const userId = getCurrentUserId(req);
+    if (pharmacy.ownerUserId !== userId) {
+      return res.status(403).json({
+        error: { message: 'Access denied', status: 403 }
+      });
+    }
+
+    res.json({
+      verified: pharmacy.verified || false,
+      verificationStatus: pharmacy.verificationStatus || 'pending',
+      message: pharmacy.verified 
+        ? 'Your pharmacy is verified and can receive orders.'
+        : pharmacy.verificationStatus === 'rejected'
+        ? 'Your pharmacy verification was rejected. Please contact support.'
+        : 'Your pharmacy registration is pending verification. You will be notified once verified.',
+    });
+  } catch (error) {
+    console.error('Verification status error:', error);
+    res.status(500).json({
+      error: { message: 'Internal server error', status: 500 }
+    });
+  }
+});
+
+// Admin endpoint to verify pharmacy (for future admin panel)
+app.post('/api/pharmacies/:id/verify', authenticateToken, (req, res) => {
+  try {
+    const { verified } = req.body;
+    const pharmacy = Database.findPharmacyById(parseInt(req.params.id));
+    
+    if (!pharmacy) {
+      return res.status(404).json({
+        error: { message: 'Pharmacy not found', status: 404 }
+      });
+    }
+
+    // TODO: Add admin check here
+    // For now, allow any authenticated user to verify (for testing)
+    
+    const updatedPharmacy = Database.verifyPharmacy(pharmacy.id, verified !== false);
+    
+    res.json({
+      ...updatedPharmacy,
+      message: updatedPharmacy.verified 
+        ? 'Pharmacy verified successfully'
+        : 'Pharmacy verification rejected',
+    });
+  } catch (error) {
+    console.error('Verify pharmacy error:', error);
     res.status(500).json({
       error: { message: 'Internal server error', status: 500 }
     });
@@ -557,6 +704,29 @@ app.post('/api/orders', authenticateToken, (req, res) => {
   try {
     const userId = getCurrentUserId(req);
     const orderData = req.body;
+
+    // Check if order contains pharmacy IDs and verify they are verified
+    if (orderData.items && Array.isArray(orderData.items)) {
+      const pharmacyIds = [...new Set(orderData.items.map(item => item.pharmacyId).filter(Boolean))];
+      
+      for (const pharmacyId of pharmacyIds) {
+        const pharmacy = Database.findPharmacyById(pharmacyId);
+        if (!pharmacy) {
+          return res.status(404).json({
+            error: { message: `Pharmacy with ID ${pharmacyId} not found`, status: 404 }
+          });
+        }
+        // Check verification status (default to verified for backward compatibility)
+        if (pharmacy.verified === false) {
+          return res.status(403).json({
+            error: { 
+              message: `Pharmacy "${pharmacy.name}" is not verified and cannot receive orders. Please select a verified pharmacy.`, 
+              status: 403 
+            }
+          });
+        }
+      }
+    }
 
     const order = {
       ...orderData,

@@ -143,6 +143,49 @@ class Database {
     return pharmacies.find(p => p.id === id);
   }
 
+  static findPharmacyByOwnerId(ownerUserId) {
+    const pharmacies = this.read('pharmacies');
+    return pharmacies.find(p => p.ownerUserId === ownerUserId);
+  }
+
+  static createPharmacy(pharmacy) {
+    const pharmacies = this.read('pharmacies');
+    // Get next ID
+    const maxId = pharmacies.length > 0 ? Math.max(...pharmacies.map(p => p.id || 0)) : 0;
+    const newPharmacy = {
+      ...pharmacy,
+      id: maxId + 1,
+      verified: pharmacy.verified !== undefined ? pharmacy.verified : false,
+      verificationStatus: pharmacy.verificationStatus || 'pending',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    pharmacies.push(newPharmacy);
+    this.write('pharmacies', pharmacies);
+    return newPharmacy;
+  }
+
+  static updatePharmacy(id, updates) {
+    const pharmacies = this.read('pharmacies');
+    const index = pharmacies.findIndex(p => p.id === id);
+    if (index === -1) return null;
+
+    pharmacies[index] = { 
+      ...pharmacies[index], 
+      ...updates,
+      updatedAt: new Date().toISOString(),
+    };
+    this.write('pharmacies', pharmacies);
+    return pharmacies[index];
+  }
+
+  static verifyPharmacy(id, verified = true) {
+    return this.updatePharmacy(id, { 
+      verified,
+      verificationStatus: verified ? 'approved' : 'rejected',
+    });
+  }
+
   // Pharmacy inventory operations
   static getPharmacyInventory() {
     return this.read('pharmacyInventory');
@@ -304,10 +347,10 @@ class Database {
 
     // Initialize pharmacies
     const samplePharmacies = [
-      { id: 1, name: "El Ezaby Pharmacy", address: "123 Main St, Beirut, Lebanon", phone: "+961 1 123 456", rating: 4.5, distance: "0.8 km", deliveryTime: "20-30 min", deliveryFee: 15, isOpen: true, latitude: 33.8938, longitude: 35.5018, hours: { open: "08:00", close: "23:00" } },
-      { id: 2, name: "Seif Pharmacy", address: "456 Downtown, Beirut, Lebanon", phone: "+961 1 234 567", rating: 4.3, distance: "1.2 km", deliveryTime: "25-35 min", deliveryFee: 20, isOpen: true, latitude: 33.8938, longitude: 35.5018, hours: { open: "09:00", close: "22:00" } },
-      { id: 3, name: "19011 Pharmacy", address: "789 Hamra, Beirut, Lebanon", phone: "+961 1 345 678", rating: 4.7, distance: "2.5 km", deliveryTime: "30-40 min", deliveryFee: 25, isOpen: true, latitude: 33.8938, longitude: 35.5018, hours: { open: "00:00", close: "23:59" } },
-      { id: 4, name: "Alfa Pharmacy", address: "321 Achrafieh, Beirut, Lebanon", phone: "+961 1 456 789", rating: 4.2, distance: "3.0 km", deliveryTime: "35-45 min", deliveryFee: 30, isOpen: false, latitude: 33.8938, longitude: 35.5018, hours: { open: "08:00", close: "20:00" } },
+      { id: 1, name: "El Ezaby Pharmacy", address: "123 Main St, Beirut, Lebanon", phone: "+961 1 123 456", rating: 4.5, distance: "0.8 km", deliveryTime: "20-30 min", deliveryFee: 15, isOpen: true, latitude: 33.8938, longitude: 35.5018, hours: { open: "08:00", close: "23:00" }, verified: true, verificationStatus: 'approved', ownerUserId: null },
+      { id: 2, name: "Seif Pharmacy", address: "456 Downtown, Beirut, Lebanon", phone: "+961 1 234 567", rating: 4.3, distance: "1.2 km", deliveryTime: "25-35 min", deliveryFee: 20, isOpen: true, latitude: 33.8938, longitude: 35.5018, hours: { open: "09:00", close: "22:00" }, verified: true, verificationStatus: 'approved', ownerUserId: null },
+      { id: 3, name: "19011 Pharmacy", address: "789 Hamra, Beirut, Lebanon", phone: "+961 1 345 678", rating: 4.7, distance: "2.5 km", deliveryTime: "30-40 min", deliveryFee: 25, isOpen: true, latitude: 33.8938, longitude: 35.5018, hours: { open: "00:00", close: "23:59" }, verified: true, verificationStatus: 'approved', ownerUserId: null },
+      { id: 4, name: "Alfa Pharmacy", address: "321 Achrafieh, Beirut, Lebanon", phone: "+961 1 456 789", rating: 4.2, distance: "3.0 km", deliveryTime: "35-45 min", deliveryFee: 30, isOpen: false, latitude: 33.8938, longitude: 35.5018, hours: { open: "08:00", close: "20:00" }, verified: true, verificationStatus: 'approved', ownerUserId: null },
     ];
     this.write('pharmacies', samplePharmacies);
 

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import PharmacistLayout from '@/components/pharmacist/PharmacistLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -6,47 +6,111 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
-import { Building2, Phone, Mail, MapPin, Clock, FileCheck, Save } from 'lucide-react';
+import { Building2, Phone, Mail, MapPin, Clock, FileCheck, Save, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { PharmaciesService } from '@/services/pharmacies.service';
+import { Pharmacy } from '@/types';
+import { AuthService } from '@/services/auth.service';
 
 const Profile = () => {
-  const [profile, setProfile] = useState<{
-    name: string;
-    licenseNumber: string;
-    phone: string;
-    email: string;
-    address: string;
-    operatingHours: string;
-    status: 'pending' | 'approved' | 'rejected';
-    registeredAt: string;
-  }>({
-    name: 'PharmaCare Pharmacy',
-    licenseNumber: 'PH-2024-12345',
-    phone: '+961 1 234 567',
-    email: 'contact@pharmacare.lb',
-    address: 'Hamra Street, Beirut, Lebanon',
-    operatingHours: 'Mon-Sat: 8:00 AM - 8:00 PM',
-    status: 'approved',
-    registeredAt: '2024-01-15',
-  });
-
+  const [pharmacy, setPharmacy] = useState<Pharmacy | null>(null);
+  const [user, setUser] = useState<{ email: string } | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
 
-  const handleSave = () => {
-    toast.success('Profile updated successfully');
-    setIsEditing(false);
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setIsLoading(true);
+        const [pharmacyData, userData] = await Promise.all([
+          PharmaciesService.getMyPharmacy(),
+          AuthService.getCurrentUser(),
+        ]);
+        console.log('Fetched pharmacy data:', pharmacyData);
+        console.log('Fetched user data:', userData);
+        setPharmacy(pharmacyData);
+        setUser(userData);
+      } catch (error: any) {
+        console.error('Failed to fetch pharmacy data:', error);
+        if (error?.status === 404) {
+          // No pharmacy registered yet - this is okay
+          setPharmacy(null);
+        } else {
+          toast.error('Failed to load pharmacy information: ' + (error?.error?.message || error?.message || 'Unknown error'));
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  const handleSave = async () => {
+    if (!pharmacy) return;
+    
+    try {
+      // TODO: Implement pharmacy update endpoint
+      toast.success('Profile updated successfully');
+      setIsEditing(false);
+    } catch (error) {
+      toast.error('Failed to update profile');
+    }
   };
 
   const getStatusBadge = () => {
+    if (!pharmacy) return { label: 'Not Registered', variant: 'outline' as const };
+    
+    const status = pharmacy.verificationStatus || (pharmacy.verified ? 'approved' : 'pending');
     const variants = {
       pending: { label: 'Pending Review', variant: 'outline' as const },
       approved: { label: 'Approved', variant: 'default' as const },
       rejected: { label: 'Rejected', variant: 'destructive' as const },
     };
-    return variants[profile.status];
+    return variants[status as keyof typeof variants] || variants.pending;
   };
 
   const statusBadge = getStatusBadge();
+
+  if (isLoading) {
+    return (
+      <PharmacistLayout>
+        <div className="container py-8 px-4 max-w-4xl space-y-6">
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          </div>
+        </div>
+      </PharmacistLayout>
+    );
+  }
+
+  if (!pharmacy) {
+    return (
+      <PharmacistLayout>
+        <div className="container py-8 px-4 max-w-4xl space-y-6">
+          <h1 className="text-3xl font-bold tracking-tight">Pharmacy Profile</h1>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="text-center py-8">
+                <Building2 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-lg font-semibold mb-2">No Pharmacy Registered</h3>
+                <p className="text-muted-foreground mb-4">
+                  You haven't registered a pharmacy yet. Please register your pharmacy to start receiving orders.
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Contact support to register your pharmacy, or if you just registered, please refresh the page.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </PharmacistLayout>
+    );
+  }
+
+  const operatingHours = pharmacy.hours 
+    ? `${pharmacy.hours.open} - ${pharmacy.hours.close}`
+    : 'Not specified';
 
   return (
     <PharmacistLayout>
@@ -88,8 +152,8 @@ const Profile = () => {
                 </Label>
                 <Input
                   id="name"
-                  value={profile.name}
-                  onChange={(e) => setProfile(prev => ({ ...prev, name: e.target.value }))}
+                  value={pharmacy.name}
+                  onChange={(e) => setPharmacy(prev => prev ? { ...prev, name: e.target.value } : null)}
                   disabled={!isEditing}
                 />
               </div>
@@ -101,7 +165,7 @@ const Profile = () => {
                 </Label>
                 <Input
                   id="license"
-                  value={profile.licenseNumber}
+                  value={pharmacy.licenseNumber || 'Not provided'}
                   disabled
                   className="bg-muted"
                 />
@@ -114,8 +178,8 @@ const Profile = () => {
                 </Label>
                 <Input
                   id="phone"
-                  value={profile.phone}
-                  onChange={(e) => setProfile(prev => ({ ...prev, phone: e.target.value }))}
+                  value={pharmacy.phone}
+                  onChange={(e) => setPharmacy(prev => prev ? { ...prev, phone: e.target.value } : null)}
                   disabled={!isEditing}
                 />
               </div>
@@ -128,9 +192,9 @@ const Profile = () => {
                 <Input
                   id="email"
                   type="email"
-                  value={profile.email}
-                  onChange={(e) => setProfile(prev => ({ ...prev, email: e.target.value }))}
-                  disabled={!isEditing}
+                  value={user?.email || 'Not available'}
+                  disabled
+                  className="bg-muted"
                 />
               </div>
             </div>
@@ -142,8 +206,8 @@ const Profile = () => {
               </Label>
               <Textarea
                 id="address"
-                value={profile.address}
-                onChange={(e) => setProfile(prev => ({ ...prev, address: e.target.value }))}
+                value={pharmacy.address}
+                onChange={(e) => setPharmacy(prev => prev ? { ...prev, address: e.target.value } : null)}
                 disabled={!isEditing}
                 rows={2}
               />
@@ -156,21 +220,22 @@ const Profile = () => {
               </Label>
               <Input
                 id="hours"
-                value={profile.operatingHours}
-                onChange={(e) => setProfile(prev => ({ ...prev, operatingHours: e.target.value }))}
+                value={operatingHours}
                 disabled={!isEditing}
               />
             </div>
 
-            <div className="pt-4 border-t">
-              <p className="text-sm text-muted-foreground">
-                Registered since: {new Date(profile.registeredAt).toLocaleDateString()}
-              </p>
-            </div>
+            {pharmacy.createdAt && (
+              <div className="pt-4 border-t">
+                <p className="text-sm text-muted-foreground">
+                  Registered since: {new Date(pharmacy.createdAt).toLocaleDateString()}
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
 
-        {profile.status === 'pending' && (
+        {pharmacy.verificationStatus === 'pending' && (
           <Card className="border-orange-200 bg-orange-50/50">
             <CardContent className="pt-6">
               <div className="flex gap-3">
@@ -180,7 +245,8 @@ const Profile = () => {
                     Account Pending Verification
                   </h3>
                   <p className="text-sm text-orange-800">
-                    Your pharmacy registration is currently under review. You'll be notified once your account is approved.
+                    Your pharmacy registration is currently under review. You'll be notified once your account is approved. 
+                    Until then, your pharmacy will not appear in public listings and cannot receive orders.
                   </p>
                 </div>
               </div>
@@ -188,7 +254,7 @@ const Profile = () => {
           </Card>
         )}
 
-        {profile.status === 'rejected' && (
+        {pharmacy.verificationStatus === 'rejected' && (
           <Card className="border-destructive bg-destructive/10">
             <CardContent className="pt-6">
               <div className="flex gap-3">

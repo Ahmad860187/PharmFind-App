@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Settings, Search, MapPin, Phone, Clock, Package, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,64 +8,9 @@ import { Badge } from "@/components/ui/badge";
 import Logo from "@/components/Logo";
 import { CartIcon } from "@/components/CartIcon";
 import { useOrders } from "@/contexts/OrdersContext";
-
-// Mock data for featured pharmacies (Real Beirut pharmacies)
-const mockPharmacies = [
-  {
-    id: 1,
-    name: "Habib Pharmacy",
-    address: "Hamra Street, Hamra, Beirut",
-    distance: "1.8 km",
-    phone: "+961 1 340 555",
-    hours: "Open until 10:00 PM",
-    isOpen: true,
-  },
-  {
-    id: 2,
-    name: "Wardieh Pharmacy",
-    address: "Achrafieh Main Road, Achrafieh, Beirut",
-    distance: "2.4 km",
-    phone: "+961 1 200 800",
-    hours: "Open 24 hours",
-    isOpen: true,
-  },
-  {
-    id: 3,
-    name: "Verdun Pharmacy",
-    address: "Verdun Street, Verdun, Beirut",
-    distance: "3.2 km",
-    phone: "+961 1 803 900",
-    hours: "Open until 11:00 PM",
-    isOpen: true,
-  },
-  {
-    id: 4,
-    name: "Pharmacie Hamra",
-    address: "Bliss Street, Hamra, Beirut",
-    distance: "1.5 km",
-    phone: "+961 1 350 200",
-    hours: "Open until 9:00 PM",
-    isOpen: true,
-  },
-  {
-    id: 5,
-    name: "Gefinor Pharmacy",
-    address: "Clemenceau Street, Hamra, Beirut",
-    distance: "2.1 km",
-    phone: "+961 1 369 400",
-    hours: "Opens at 8:00 AM",
-    isOpen: false,
-  },
-  {
-    id: 6,
-    name: "ABC Achrafieh Pharmacy",
-    address: "ABC Mall, Achrafieh, Beirut",
-    distance: "3.8 km",
-    phone: "+961 1 209 100",
-    hours: "Open until 10:00 PM",
-    isOpen: true,
-  },
-];
+import { PharmaciesService } from "@/services/pharmacies.service";
+import { Pharmacy } from "@/types";
+import { toast } from "sonner";
 
 // Mock data for popular medicines
 const mockPopularMedicines = [
@@ -77,8 +22,27 @@ const mockPopularMedicines = [
 
 const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [pharmacies, setPharmacies] = useState<Pharmacy[]>([]);
+  const [isLoadingPharmacies, setIsLoadingPharmacies] = useState(true);
   const navigate = useNavigate();
   const { getUnreadOrdersCount } = useOrders();
+
+  useEffect(() => {
+    const fetchPharmacies = async () => {
+      try {
+        setIsLoadingPharmacies(true);
+        const data = await PharmaciesService.searchPharmacies();
+        setPharmacies(data);
+      } catch (error) {
+        console.error('Failed to fetch pharmacies:', error);
+        toast.error('Failed to load pharmacies');
+      } finally {
+        setIsLoadingPharmacies(false);
+      }
+    };
+
+    fetchPharmacies();
+  }, []);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -173,39 +137,59 @@ const Index = () => {
             <p className="text-muted-foreground">Popular pharmacies in your area</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {mockPharmacies.map((pharmacy) => (
-              <Card 
-                key={pharmacy.id} 
-                className="hover:shadow-lg transition-shadow cursor-pointer"
-                onClick={() => navigate(`/pharmacy/${pharmacy.id}`)}
-              >
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <CardTitle className="text-xl">{pharmacy.name}</CardTitle>
-                    <Badge variant={pharmacy.isOpen ? "secondary" : "outline"}>
-                      {pharmacy.isOpen ? "Open" : "Closed"}
-                    </Badge>
-                  </div>
-                  <CardDescription>{pharmacy.address}</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  <div className="flex items-center text-sm text-muted-foreground">
-                    <MapPin className="mr-2 h-4 w-4" />
-                    {pharmacy.distance} away
-                  </div>
-                  <div className="flex items-center text-sm text-muted-foreground">
-                    <Phone className="mr-2 h-4 w-4" />
-                    {pharmacy.phone}
-                  </div>
-                  <div className="flex items-center text-sm text-muted-foreground">
-                    <Clock className="mr-2 h-4 w-4" />
-                    {pharmacy.hours}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          {isLoadingPharmacies ? (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">Loading pharmacies...</p>
+            </div>
+          ) : pharmacies.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">No pharmacies available at the moment.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {pharmacies.slice(0, 6).map((pharmacy) => (
+                <Card 
+                  key={pharmacy.id} 
+                  className="hover:shadow-lg transition-shadow cursor-pointer"
+                  onClick={() => navigate(`/pharmacy/${pharmacy.id}`)}
+                >
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <CardTitle className="text-xl">{pharmacy.name}</CardTitle>
+                      <Badge variant={pharmacy.isOpen ? "secondary" : "outline"}>
+                        {pharmacy.isOpen ? "Open" : "Closed"}
+                      </Badge>
+                    </div>
+                    <CardDescription>{pharmacy.address}</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    {pharmacy.distance && (
+                      <div className="flex items-center text-sm text-muted-foreground">
+                        <MapPin className="mr-2 h-4 w-4" />
+                        {pharmacy.distance} away
+                      </div>
+                    )}
+                    <div className="flex items-center text-sm text-muted-foreground">
+                      <Phone className="mr-2 h-4 w-4" />
+                      {pharmacy.phone}
+                    </div>
+                    {pharmacy.hours && (
+                      <div className="flex items-center text-sm text-muted-foreground">
+                        <Clock className="mr-2 h-4 w-4" />
+                        {pharmacy.hours.open} - {pharmacy.hours.close}
+                      </div>
+                    )}
+                    {pharmacy.deliveryTime && (
+                      <div className="flex items-center text-sm text-muted-foreground">
+                        <Package className="mr-2 h-4 w-4" />
+                        {pharmacy.deliveryTime}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 

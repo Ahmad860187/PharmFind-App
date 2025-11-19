@@ -64,6 +64,10 @@ This project is built with:
 
 Simply open [Lovable](https://lovable.dev/projects/9aa89377-1dd3-4e08-a9e5-83932dc2b62b) and click on Share -> Publish.
 
+### Docker / self-hosting
+
+To run the frontend and backend as containers, follow the steps in [`DOCKER.md`](DOCKER.md). A ready-to-use `docker-compose.yml` is included for local development.
+
 ## Can I connect a custom domain to my Lovable project?
 
 Yes, you can!

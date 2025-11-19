@@ -14,6 +14,12 @@ export interface Pharmacy {
     open: string;
     close: string;
   };
+  verified?: boolean;
+  verificationStatus?: 'pending' | 'approved' | 'rejected';
+  ownerUserId?: string;
+  licenseNumber?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface PharmacyWithInventory extends Pharmacy {

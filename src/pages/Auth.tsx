@@ -6,11 +6,12 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Pill, Heart, ShieldCheck } from "lucide-react";
+import { Pill, Heart, ShieldCheck, Building2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import Logo from "@/components/Logo";
 import { AuthService } from "@/services/auth.service";
+import { PharmaciesService } from "@/services/pharmacies.service";
 import { useRole, UserRole } from "@/contexts/RoleContext";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
@@ -37,6 +38,7 @@ const Auth = () => {
     const password = formData.get('signup-password') as string;
 
     try {
+      // Register user account
       const response = await AuthService.register({
         email,
         password,
@@ -47,7 +49,85 @@ const Auth = () => {
       if ((response as any).message) {
         toast.success((response as any).message);
       } else {
-        toast.success("Account created successfully! Please check your email to verify your account.");
+        toast.success("Account created successfully!");
+      }
+      
+      // If pharmacist, register pharmacy
+      if (selectedRole === 'pharmacist') {
+        const pharmacyName = formData.get('pharmacy-name') as string;
+        const pharmacyAddress = formData.get('pharmacy-address') as string;
+        const pharmacyPhone = formData.get('pharmacy-phone') as string;
+        const licenseNumber = formData.get('license-number') as string;
+        const hoursOpen = formData.get('hours-open') as string;
+        const hoursClose = formData.get('hours-close') as string;
+        const deliveryFee = formData.get('delivery-fee') as string;
+
+        if (!pharmacyName || !pharmacyAddress || !pharmacyPhone) {
+          toast.error("Please fill in all pharmacy details");
+          setIsLoading(false);
+          return;
+        }
+
+        // Ensure token is available
+        const token = localStorage.getItem('auth_token');
+        if (!token) {
+          console.error('No auth token found after registration');
+          toast.error("Account created but pharmacy registration failed. Please try registering your pharmacy from the dashboard.");
+          setIsLoading(false);
+          return;
+        }
+
+        try {
+          const pharmacyData = {
+            name: pharmacyName,
+            address: pharmacyAddress,
+            phone: pharmacyPhone,
+            licenseNumber: licenseNumber || undefined,
+            hours: hoursOpen && hoursClose ? {
+              open: hoursOpen,
+              close: hoursClose,
+            } : undefined,
+            baseDeliveryFee: deliveryFee ? parseFloat(deliveryFee) : undefined,
+          };
+
+          console.log('Registering pharmacy with data:', pharmacyData);
+          console.log('Auth token:', token ? 'Present' : 'Missing');
+
+          const pharmacyResponse = await PharmaciesService.registerPharmacy(pharmacyData);
+          
+          console.log('Pharmacy registration response:', pharmacyResponse);
+          
+          if (pharmacyResponse && pharmacyResponse.message) {
+            toast.success(pharmacyResponse.message);
+          } else {
+            toast.success("Pharmacy registered successfully! You can now receive orders.");
+          }
+        } catch (pharmacyError: any) {
+          console.error('Pharmacy registration error details:', {
+            error: pharmacyError,
+            errorMessage: pharmacyError?.error?.message,
+            message: pharmacyError?.message,
+            status: pharmacyError?.status,
+            fullError: pharmacyError
+          });
+          
+          // Show more detailed error message
+          let errorMessage = "Account created but pharmacy registration failed.";
+          if (pharmacyError?.error?.message) {
+            errorMessage = pharmacyError.error.message;
+          } else if (pharmacyError?.message) {
+            errorMessage = pharmacyError.message;
+          } else if (pharmacyError?.status === 401) {
+            errorMessage = "Authentication failed. Please try logging in again.";
+          } else if (pharmacyError?.status === 409) {
+            errorMessage = "You already have a registered pharmacy.";
+          } else if (pharmacyError?.status === 400) {
+            errorMessage = "Invalid pharmacy data. Please check all fields.";
+          }
+          
+          toast.error(errorMessage + " You can register your pharmacy later from your dashboard.");
+          // Don't prevent navigation - user account is created successfully
+        }
       }
       
       setRole(selectedRole);
@@ -332,6 +412,90 @@ const Auth = () => {
                         </div>
                       </RadioGroup>
                     </div>
+
+                    {/* Pharmacy Registration Fields - Only show for pharmacists */}
+                    {selectedRole === 'pharmacist' && (
+                      <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Building2 className="h-4 w-4 text-primary" />
+                          <Label className="text-base font-semibold">Pharmacy Information</Label>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="pharmacy-name">Pharmacy Name *</Label>
+                          <Input
+                            id="pharmacy-name"
+                            name="pharmacy-name"
+                            type="text"
+                            placeholder="My Pharmacy"
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="pharmacy-address">Pharmacy Address *</Label>
+                          <Input
+                            id="pharmacy-address"
+                            name="pharmacy-address"
+                            type="text"
+                            placeholder="123 Main St, Beirut, Lebanon"
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="pharmacy-phone">Pharmacy Phone *</Label>
+                          <Input
+                            id="pharmacy-phone"
+                            name="pharmacy-phone"
+                            type="tel"
+                            placeholder="+961 1 234 567"
+                            required
+                          />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="hours-open">Opening Time</Label>
+                            <Input
+                              id="hours-open"
+                              name="hours-open"
+                              type="time"
+                              defaultValue="08:00"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="hours-close">Closing Time</Label>
+                            <Input
+                              id="hours-close"
+                              name="hours-close"
+                              type="time"
+                              defaultValue="22:00"
+                            />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="delivery-fee">Delivery Fee (LBP)</Label>
+                            <Input
+                              id="delivery-fee"
+                              name="delivery-fee"
+                              type="number"
+                              placeholder="15.00"
+                              defaultValue="15"
+                              min="0"
+                              step="0.01"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="license-number">License Number</Label>
+                            <Input
+                              id="license-number"
+                              name="license-number"
+                              type="text"
+                              placeholder="PH-2024-12345"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                     <div className="space-y-2">
                       <Label htmlFor="signup-password">Password</Label>
                       <Input

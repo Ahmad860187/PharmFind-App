@@ -24,11 +24,12 @@ export class PharmaciesService {
       return mockPharmacies;
     }
 
-    return apiClient.get<Pharmacy[]>(`/pharmacies`, {
+    const response = await apiClient.get<{ data: Pharmacy[] }>(`/pharmacies`, {
       lat: latitude,
       lng: longitude,
       radius,
     });
+    return response.data || [];
   }
 
   /**
@@ -59,5 +60,55 @@ export class PharmaciesService {
     }
 
     return apiClient.get<Pharmacy[]>(`/medicines/${medicineId}/pharmacies`);
+  }
+
+  /**
+   * Register a new pharmacy
+   */
+  static async registerPharmacy(data: {
+    name: string;
+    address: string;
+    phone: string;
+    latitude?: number;
+    longitude?: number;
+    hours?: { open: string; close: string };
+    baseDeliveryFee?: number;
+    licenseNumber?: string;
+  }): Promise<Pharmacy & { message?: string }> {
+    // Always use real API for registration (no mock data)
+    console.log('Calling pharmacy registration API with:', data);
+    try {
+      const response = await apiClient.post<Pharmacy & { message?: string }>(`/pharmacies/register`, data);
+      console.log('Pharmacy registration API response:', response);
+      return response;
+    } catch (error) {
+      console.error('Pharmacy registration API error:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get current user's pharmacy
+   */
+  static async getMyPharmacy(): Promise<Pharmacy | null> {
+    try {
+      return await apiClient.get<Pharmacy>(`/pharmacies/me`);
+    } catch (error: any) {
+      if (error?.status === 404) {
+        return null;
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Get pharmacy verification status
+   */
+  static async getVerificationStatus(pharmacyId: number): Promise<{
+    verified: boolean;
+    verificationStatus: string;
+    message: string;
+  }> {
+    return apiClient.get(`/pharmacies/${pharmacyId}/verification-status`);
   }
 }

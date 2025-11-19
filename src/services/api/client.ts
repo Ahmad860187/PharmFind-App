@@ -55,11 +55,34 @@ class ApiClient {
       clearTimeout(timeoutId);
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
+        const contentType = response.headers.get('content-type');
+        let errorData: any = null;
+        
+        try {
+          if (contentType && contentType.includes('application/json')) {
+            errorData = await response.json();
+          } else {
+            const text = await response.text();
+            errorData = text ? { message: text } : null;
+          }
+        } catch (e) {
+          console.error('Failed to parse error response:', e);
+          errorData = null;
+        }
+        
         const error: ApiError = errorData?.error || {
-          message: errorData?.message || 'An error occurred',
+          message: errorData?.message || `HTTP ${response.status}: ${response.statusText || 'An error occurred'}`,
           status: response.status,
         };
+        
+        console.error('API Error Response:', {
+          url: response.url,
+          status: response.status,
+          statusText: response.statusText,
+          errorData,
+          error
+        });
+        
         throw error;
       }
 
