@@ -49,9 +49,41 @@ const ActiveDelivery = () => {
   };
 
   const navigateToLocation = (lat: number, lng: number, label: string) => {
-    const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
-    window.open(url, '_blank');
-    toast.success(`Opening Google Maps to ${label}`);
+    // Try to open in native maps app first (mobile), fallback to web
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    
+    if (isMobile) {
+      // Try native app first
+      const nativeUrl = `geo:${lat},${lng}?q=${lat},${lng}(${encodeURIComponent(label)})`;
+      const googleMapsUrl = `comgooglemaps://?daddr=${lat},${lng}&directionsmode=driving`;
+      const appleMapsUrl = `http://maps.apple.com/?daddr=${lat},${lng}&dirflg=d`;
+      
+      // Try Google Maps app, then Apple Maps, then web
+      const link = document.createElement('a');
+      link.href = googleMapsUrl;
+      link.click();
+      
+      setTimeout(() => {
+        // If Google Maps didn't open, try Apple Maps
+        const appleLink = document.createElement('a');
+        appleLink.href = appleMapsUrl;
+        appleLink.click();
+        
+        setTimeout(() => {
+          // Fallback to web Google Maps
+          const webUrl = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+          window.open(webUrl, '_blank');
+        }, 500);
+      }, 500);
+    } else {
+      // Desktop: open in new tab
+      const url = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+      window.open(url, '_blank');
+    }
+    
+    toast.success(`Opening navigation to ${label}`, {
+      description: "Google Maps will open in a new window",
+    });
   };
 
   const callCustomer = () => {
@@ -137,28 +169,40 @@ const ActiveDelivery = () => {
           </CardContent>
         </Card>
 
-        {/* Navigation */}
-        <Card>
+        {/* Navigation - Enhanced with Quick Access */}
+        <Card className="border-2 border-primary/20">
           <CardHeader>
-            <CardTitle>Navigation</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <Navigation className="h-5 w-5 text-primary" />
+                Navigation
+              </CardTitle>
+              <Badge variant="secondary" className="text-xs">
+                Tap to open in Google Maps
+              </Badge>
+            </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div>
-              <div className="flex items-start gap-2 mb-2">
-                <MapPin className="h-5 w-5 text-muted-foreground mt-0.5" />
+            {/* Pharmacy Navigation */}
+            <div className="p-4 border border-border rounded-lg bg-muted/30">
+              <div className="flex items-start gap-3 mb-3">
+                <div className="p-2 bg-primary/10 rounded-full">
+                  <MapPin className="h-5 w-5 text-primary" />
+                </div>
                 <div className="flex-1">
-                  <p className="text-sm text-muted-foreground">Pickup Location</p>
-                  <p className="font-medium text-foreground">{activeDelivery.pharmacyName}</p>
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Pickup Location</p>
+                  <p className="text-lg font-semibold text-foreground mt-1">{activeDelivery.pharmacyName}</p>
                   <p className="text-sm text-muted-foreground">{activeDelivery.pharmacyAddress}</p>
                 </div>
               </div>
               <Button 
                 className="w-full" 
                 variant="outline"
+                size="lg"
                 onClick={() => navigateToLocation(
                   activeDelivery.pharmacyCoordinates.lat,
                   activeDelivery.pharmacyCoordinates.lng,
-                  'pharmacy'
+                  activeDelivery.pharmacyName
                 )}
               >
                 <Navigation className="h-4 w-4 mr-2" />
@@ -166,24 +210,29 @@ const ActiveDelivery = () => {
               </Button>
             </div>
 
-            <div>
-              <div className="flex items-start gap-2 mb-2">
-                <MapPin className="h-5 w-5 text-secondary mt-0.5" />
+            {/* Customer Navigation - Primary Action */}
+            <div className="p-4 border-2 border-secondary rounded-lg bg-secondary/5">
+              <div className="flex items-start gap-3 mb-3">
+                <div className="p-2 bg-secondary/20 rounded-full">
+                  <MapPin className="h-5 w-5 text-secondary" />
+                </div>
                 <div className="flex-1">
-                  <p className="text-sm text-muted-foreground">Delivery Location</p>
-                  <p className="font-medium text-foreground">{activeDelivery.deliveryAddress}</p>
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Delivery Location</p>
+                  <p className="text-lg font-semibold text-foreground mt-1">{activeDelivery.customerName}</p>
+                  <p className="text-sm text-muted-foreground">{activeDelivery.deliveryAddress}</p>
                 </div>
               </div>
               <Button 
                 className="w-full"
+                size="lg"
                 onClick={() => navigateToLocation(
                   activeDelivery.addressCoordinates.lat,
                   activeDelivery.addressCoordinates.lng,
-                  'customer'
+                  activeDelivery.deliveryAddress
                 )}
               >
                 <Navigation className="h-4 w-4 mr-2" />
-                Navigate to Customer
+                Navigate to Customer Address
               </Button>
             </div>
           </CardContent>
