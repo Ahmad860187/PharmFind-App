@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Pill, Heart, ShieldCheck, Building2 } from "lucide-react";
+import { Pill, Heart, ShieldCheck, Building2, Truck } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import Logo from "@/components/Logo";
@@ -131,7 +131,10 @@ const Auth = () => {
       }
       
       setRole(selectedRole);
-      const redirectPath = selectedRole === 'pharmacist' ? '/pharmacist/dashboard' : '/dashboard';
+      const redirectPath = 
+        selectedRole === 'pharmacist' ? '/pharmacist/dashboard' : 
+        selectedRole === 'driver' ? '/driver/dashboard' : 
+        '/dashboard';
       navigate(redirectPath);
     } catch (error: any) {
       const errorMessage = error?.error?.message || error?.message || "Failed to create account";
@@ -163,7 +166,10 @@ const Auth = () => {
       
       setRole(selectedRole);
       toast.success("Logged in successfully!");
-      const redirectPath = selectedRole === 'pharmacist' ? '/pharmacist/dashboard' : '/dashboard';
+      const redirectPath = 
+        selectedRole === 'pharmacist' ? '/pharmacist/dashboard' : 
+        selectedRole === 'driver' ? '/driver/dashboard' : 
+        '/dashboard';
       navigate(redirectPath);
     } catch (error: any) {
       const errorMessage = error?.error?.message || error?.message || "Invalid credentials";
@@ -263,6 +269,13 @@ const Auth = () => {
                         <div className="flex items-center space-x-2">
                           <RadioGroupItem value="pharmacist" id="login-pharmacist" />
                           <Label htmlFor="login-pharmacist" className="font-normal cursor-pointer">Pharmacist</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="driver" id="login-driver" />
+                          <Label htmlFor="login-driver" className="flex items-center gap-2 cursor-pointer">
+                            <Truck className="h-4 w-4" />
+                            Delivery Driver
+                          </Label>
                         </div>
                       </RadioGroup>
                     </div>
@@ -410,6 +423,13 @@ const Auth = () => {
                           <RadioGroupItem value="pharmacist" id="signup-pharmacist" />
                           <Label htmlFor="signup-pharmacist" className="font-normal cursor-pointer">Pharmacist</Label>
                         </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="driver" id="signup-driver" />
+                          <Label htmlFor="signup-driver" className="flex items-center gap-2 cursor-pointer">
+                            <Truck className="h-4 w-4" />
+                            Delivery Driver
+                          </Label>
+                        </div>
                       </RadioGroup>
                     </div>
 
@@ -492,6 +512,54 @@ const Auth = () => {
                               placeholder="PH-2024-12345"
                             />
                           </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Driver Registration Fields - Only show for drivers */}
+                    {selectedRole === 'driver' && (
+                      <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Truck className="h-4 w-4 text-primary" />
+                          <Label className="text-base font-semibold">Driver Information</Label>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="vehicle-type">Vehicle Type *</Label>
+                          <Input
+                            id="vehicle-type"
+                            name="vehicle-type"
+                            type="text"
+                            placeholder="Motorcycle, Car, or Van"
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="license-plate">License Plate Number *</Label>
+                          <Input
+                            id="license-plate"
+                            name="license-plate"
+                            type="text"
+                            placeholder="ABC-123"
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="driver-license">Driver License Number *</Label>
+                          <Input
+                            id="driver-license"
+                            name="driver-license"
+                            type="text"
+                            placeholder="DL-123456"
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="insurance-expiry">Vehicle Insurance Expiry</Label>
+                          <Input
+                            id="insurance-expiry"
+                            name="insurance-expiry"
+                            type="date"
+                          />
                         </div>
                       </div>
                     )}

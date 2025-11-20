@@ -27,6 +27,10 @@ import OrdersQueue from "./pages/pharmacist/OrdersQueue";
 import OrderReview from "./pages/pharmacist/OrderReview";
 import InventoryManagement from "./pages/pharmacist/InventoryManagement";
 import PharmacistProfile from "./pages/pharmacist/Profile";
+import DriverDashboard from "./pages/driver/Dashboard";
+import AvailableOrders from "./pages/driver/AvailableOrders";
+import ActiveDelivery from "./pages/driver/ActiveDelivery";
+import DeliveryHistory from "./pages/driver/DeliveryHistory";
 
 const queryClient = new QueryClient();
 
@@ -61,6 +65,11 @@ const App = () => (
             <Route path="/pharmacist/orders/:orderId" element={<OrderReview />} />
             <Route path="/pharmacist/inventory" element={<InventoryManagement />} />
             <Route path="/pharmacist/profile" element={<PharmacistProfile />} />
+            {/* Driver Routes */}
+            <Route path="/driver/dashboard" element={<DriverDashboard />} />
+            <Route path="/driver/available" element={<AvailableOrders />} />
+            <Route path="/driver/active" element={<ActiveDelivery />} />
+            <Route path="/driver/history" element={<DeliveryHistory />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

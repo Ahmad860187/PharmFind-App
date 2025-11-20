@@ -35,6 +35,8 @@ export interface Order {
   paymentMethod: string;
   statusHistory: OrderStatusHistoryEntry[];
   prescriptionId?: string;
+  driverId?: string;
+  driverName?: string;
 }
 
 export interface CreateOrderData {

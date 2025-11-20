@@ -6,3 +6,4 @@ export * from "./address.types";
 export * from "./cart.types";
 export * from "./favorite.types";
 export * from "./prescription.types";
+export * from "./driver.types";

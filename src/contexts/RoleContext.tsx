@@ -1,12 +1,13 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
-export type UserRole = 'patient' | 'pharmacist';
+export type UserRole = 'patient' | 'pharmacist' | 'driver';
 
 interface RoleContextType {
   role: UserRole;
   setRole: (role: UserRole) => void;
-  isPharmacist: boolean;
   isPatient: boolean;
+  isPharmacist: boolean;
+  isDriver: boolean;
 }
 
 const RoleContext = createContext<RoleContextType | undefined>(undefined);
@@ -31,8 +32,9 @@ export function RoleProvider({ children }: { children: ReactNode }) {
       value={{ 
         role, 
         setRole,
+        isPatient: role === 'patient',
         isPharmacist: role === 'pharmacist',
-        isPatient: role === 'patient'
+        isDriver: role === 'driver',
       }}
     >
       {children}
