@@ -272,10 +272,7 @@ const Auth = () => {
                         </div>
                         <div className="flex items-center space-x-2">
                           <RadioGroupItem value="driver" id="login-driver" />
-                          <Label htmlFor="login-driver" className="flex items-center gap-2 cursor-pointer">
-                            <Truck className="h-4 w-4" />
-                            Delivery Driver
-                          </Label>
+                          <Label htmlFor="login-driver" className="font-normal cursor-pointer">Delivery Driver</Label>
                         </div>
                       </RadioGroup>
                     </div>
@@ -425,10 +422,7 @@ const Auth = () => {
                         </div>
                         <div className="flex items-center space-x-2">
                           <RadioGroupItem value="driver" id="signup-driver" />
-                          <Label htmlFor="signup-driver" className="flex items-center gap-2 cursor-pointer">
-                            <Truck className="h-4 w-4" />
-                            Delivery Driver
-                          </Label>
+                          <Label htmlFor="signup-driver" className="font-normal cursor-pointer">Delivery Driver</Label>
                         </div>
                       </RadioGroup>
                     </div>
