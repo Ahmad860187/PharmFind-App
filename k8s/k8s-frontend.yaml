@@ -1,7 +1,9 @@
+# k8s/k8s-frontend.yaml
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: frontend-deployment-v2   
+  name: frontend-deployment-v2
 spec:
   replicas: 1
   selector:
@@ -14,7 +16,7 @@ spec:
     spec:
       containers:
         - name: frontend-container
-          image: frontend-service:latest
+          image: pharmfind-frontend:latest  # image we will build
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 80
@@ -30,4 +32,4 @@ spec:
   ports:
     - port: 80
       targetPort: 80
-      nodePort: 30083 
+      nodePort: 30083   # http://<minikube-ip>:30080
