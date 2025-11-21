@@ -2,10 +2,14 @@ pipeline {
     agent any
 
     environment {
-        // This is what the frontend uses to call the backend INSIDE the cluster
-        VITE_API_BASE_URL = 'http://backend-service:3000/api'
+        // Images (always latest)
         BACKEND_IMAGE = 'pharmfind-backend:latest'
         FRONTEND_IMAGE = 'pharmfind-frontend:latest'
+
+        // Frontend -> backend URL INSIDE the cluster
+        VITE_API_BASE_URL = 'http://backend-service:3000/api'
+
+        // K8s manifests folder
         K8S_DIR = 'k8s'
     }
 
@@ -18,63 +22,61 @@ pipeline {
 
         stage('Build backend image') {
             steps {
-                sh '''
-                echo "Building backend image..."
-                docker build -f server/Dockerfile.backend \
-                    -t ${BACKEND_IMAGE} \
-                    server
-                '''
+                bat """
+                echo ---- BUILDING BACKEND IMAGE ----
+                cd server
+                docker build -f Dockerfile.backend -t %BACKEND_IMAGE% .
+                """
             }
         }
 
         stage('Build frontend image') {
             steps {
-                sh '''
-                echo "Building frontend image..."
-                docker build -f Dockerfile.frontend \
-                    --build-arg VITE_API_BASE_URL=${VITE_API_BASE_URL} \
-                    -t ${FRONTEND_IMAGE} \
-                    .
-                '''
+                bat """
+                echo ---- BUILDING FRONTEND IMAGE ----
+                docker build -f Dockerfile.frontend ^
+                  --build-arg VITE_API_BASE_URL=%VITE_API_BASE_URL% ^
+                  -t %FRONTEND_IMAGE% .
+                """
             }
         }
 
         stage('Load images into Minikube') {
             steps {
-                sh '''
-                echo "Loading images into Minikube..."
-                minikube image load ${BACKEND_IMAGE}
-                minikube image load ${FRONTEND_IMAGE}
-                '''
+                bat """
+                echo ---- LOADING IMAGES INTO MINIKUBE ----
+                minikube image load %BACKEND_IMAGE%
+                minikube image load %FRONTEND_IMAGE%
+                """
             }
         }
 
         stage('Deploy to Kubernetes') {
             steps {
-                sh '''
-                echo "Applying Kubernetes manifests..."
-                kubectl apply -f ${K8S_DIR}/k8s-backend.yaml
-                kubectl apply -f ${K8S_DIR}/k8s-frontend.yaml
+                bat """
+                echo ---- APPLYING KUBERNETES MANIFESTS ----
+                kubectl apply -f %K8S_DIR%\\k8s-backend.yaml
+                kubectl apply -f %K8S_DIR%\\k8s-frontend.yaml
 
-                echo "Waiting for backend deployment..."
+                echo ---- WAITING FOR BACKEND ----
                 kubectl rollout status deployment/backend-deployment
 
-                echo "Waiting for frontend deployment..."
+                echo ---- WAITING FOR FRONTEND ----
                 kubectl rollout status deployment/frontend-deployment-v2
 
-                echo "Current pods:"
+                echo ---- CURRENT PODS ----
                 kubectl get pods
-                '''
+                """
             }
         }
     }
 
     post {
         success {
-            echo '✅ Deploy successful! Open the app with:  minikube service frontend-service'
+            echo '✅ Deploy successful! You can now run:  minikube service frontend-service'
         }
         failure {
-            echo '❌ Deploy failed. Check the console log for errors.'
+            echo '❌ Deploy failed. Check the console log for errors above.'
         }
     }
 }
