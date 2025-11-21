@@ -2,8 +2,8 @@ pipeline {
     agent any
 
     environment {
-        // Images (always latest)
-        BACKEND_IMAGE = 'pharmfind-backend:latest'
+        // Docker image tags
+        BACKEND_IMAGE  = 'pharmfind-backend:latest'
         FRONTEND_IMAGE = 'pharmfind-frontend:latest'
 
         // Frontend -> backend URL INSIDE the cluster
@@ -34,9 +34,7 @@ pipeline {
             steps {
                 bat """
                 echo ---- BUILDING FRONTEND IMAGE ----
-                docker build -f Dockerfile.frontend ^
-                  --build-arg VITE_API_BASE_URL=%VITE_API_BASE_URL% ^
-                  -t %FRONTEND_IMAGE% .
+                docker build -f Dockerfile.frontend -t %FRONTEND_IMAGE% --build-arg VITE_API_BASE_URL=%VITE_API_BASE_URL% .
                 """
             }
         }
@@ -73,10 +71,14 @@ pipeline {
 
     post {
         success {
-            echo '✅ Deploy successful! You can now run:  minikube service frontend-service'
+            echo '✅ Deploy successful! Opening PharmFind in browser...'
+            bat """
+            for /f %%i in ('minikube ip') do set MINIKUBE_IP=%%i
+            start chrome http://%MINIKUBE_IP%:30080
+            """
         }
         failure {
-            echo '❌ Deploy failed. Check the console log for errors above.'
+            echo '❌ Deploy failed. Check the console log for errors.'
         }
     }
 }
