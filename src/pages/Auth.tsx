@@ -204,7 +204,7 @@ const Auth = () => {
               <div>
                 <h3 className="font-semibold text-foreground mb-1">Real-time Availability</h3>
                 <p className="text-muted-foreground">
-                  Check medicine stock across pharmacies instantly
+                  Hello World! Check medicine stock across pharmacies instantly
                 </p>
               </div>
             </div>
